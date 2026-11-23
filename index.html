@@ -1549,7 +1549,7 @@
   }
   function chartAppendLive(sym, v) {
     if (sheet.hidden || sym !== chartSym) return;
-    if (chartRange !== "live" && !chartLiveOnly) return;   // 24時間・3日間は、決まった間隔の点だけで描く
+    if (chartRange !== "live" && !chartLiveOnly) { if (chartPts.length) drawChart(); return; }   // 24時間・3日間は、右端（いま）の点だけを最新の価格に合わせる
     if (!chartPts.length) { if (!chartLiveOnly && chartRange !== "live") return; chartPts = [{ t: Date.now(), v }]; return; }
     liveTail.push({ t: Date.now(), v });
     if (liveTail.length > 600) liveTail.shift();
@@ -1571,7 +1571,14 @@
     $("chartChg").textContent = "";
   }
   function drawChart() {
-    const pts = chartPts.concat(liveTail);
+    let pts;
+    if (chartRange === "live" || chartLiveOnly) pts = chartPts.concat(liveTail);
+    else {
+      // 過去の点（読み込んだ時点まで）＋ 右端は「いま」のライブ価格。ライブのタブと同じ値になるように
+      const now = Date.now();
+      pts = chartPts.filter(p => p.t < now - 20 * 60e3);
+      if (last[chartSym]) pts.push({ t: now, v: last[chartSym] });
+    }
     if (pts.length < 2) return;
     const upDir = pts[pts.length - 1].v >= pts[0].v;
     const LC = upDir ? "#22C55E" : "#F87171";
