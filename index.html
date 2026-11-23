@@ -1589,12 +1589,26 @@
       ticks += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" class="g"/><text x="${W - R + 8}" y="${yy + 4}" class="ax">${fmtPrice(v)}</text>`;
     }
     const loc = LOC(); const span = t1 - t0; let xt = "";
-    const nx = W < 500 ? 2 : 4;
-    for (let i = 0; i <= nx; i++) {
-      const t = t0 + span * i / nx;
-      const d = new Date(t);
-      const lab = span < 15 * 60e3 ? d.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : span > 36 * 3600e3 ? d.toLocaleDateString(loc, { month: "numeric", day: "numeric" }) + " " + d.toLocaleTimeString(loc, { hour: "2-digit" }) : d.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" });
-      xt += `<text x="${x(t)}" y="${H - 8}" class="ax" text-anchor="${i === 0 ? "start" : i === nx ? "end" : "middle"}">${lab}</text>`;
+    if (span < 15 * 60e3) {
+      // ライブ：時刻（秒まで）
+      const nx = W < 500 ? 2 : 4;
+      for (let i = 0; i <= nx; i++) {
+        const t = t0 + span * i / nx;
+        const lab = new Date(t).toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        xt += `<text x="${x(t)}" y="${H - 8}" class="ax" text-anchor="${i === 0 ? "start" : i === nx ? "end" : "middle"}">${lab}</text>`;
+      }
+    } else {
+      // 24時間・3日間：日付だけ。日付が変わるところ（0時）に目盛りを置く
+      const dl = (t) => new Date(t).toLocaleDateString(loc, { month: "numeric", day: "numeric" });
+      const marks = [];
+      const d0 = new Date(t0); d0.setHours(24, 0, 0, 0);
+      for (let t = d0.getTime(); t < t1; t += 86400e3) marks.push(t);
+      const minGap = 56;
+      if (!marks.length || x(marks[0]) - x(t0) > minGap) xt += `<text x="${x(t0)}" y="${H - 8}" class="ax" text-anchor="start">${dl(t0)}</text>`;
+      for (const t of marks) {
+        const xx = x(t);
+        xt += `<line x1="${xx}" x2="${xx}" y1="${T}" y2="${H - B}" class="g" stroke-dasharray="2 4"/><text x="${xx}" y="${H - 8}" class="ax" text-anchor="${W - R - xx < 30 ? "end" : "middle"}">${dl(t)}</text>`;
+      }
     }
     const lastP = pts[pts.length - 1];
     $("chartBody").innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="chart-svg" role="img" aria-label="${chartSym}/USD">
