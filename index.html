@@ -804,7 +804,7 @@
 <div><div class="chart-title" id="chartTitle"></div><div class="chart-now"><span id="chartNow">—</span> <span class="chart-chg" id="chartChg"></span></div></div>
 <button type="button" class="sheet-x" id="chartClose" aria-label="閉じる">✕</button>
 </div>
-<div class="seg" id="chartRange"><button type="button" data-r="d1" aria-pressed="true"></button><button type="button" data-r="d3" aria-pressed="false"></button></div>
+<div class="seg" id="chartRange"><button type="button" data-r="live" aria-pressed="false"></button><button type="button" data-r="d1" aria-pressed="true"></button><button type="button" data-r="d3" aria-pressed="false"></button></div>
 <div class="chart-body" id="chartBody"></div>
 <div class="chart-feat" id="chartFeat"></div>
 <div class="note" id="chartNote"></div>
@@ -842,17 +842,18 @@
   const MSG = {
     ja: {
       locale: "ja-JP",
+      rangeLive: "ライブ", chartLiveNote: "FTSOv2のブロックレイテンシ価格を、数秒ごとに読んでそのまま線にしとる。開いとる間だけの値動きや。",
       chartPartial: "（一部の時間は公開RPCから読めへんかったから飛ばしとる）",
       chartLiveOnly: "いまは公開RPCから過去の価格が読めへんかったから、開いてからのライブの値動きを描いとる。少ししてからもう一回開くと、過去の分も出るかもしれん。",
       chartWaitLive: "ライブの価格を集めとるで。数秒ごとに線が伸びていく…",
       sinceOpen: "開いてから",
-      featTag: "使っている機能", featHow: "を、過去のブロック番号を指定して呼び出し",
+      featTag: "使っている機能", featHow: "を、過去のブロック番号を指定して呼び出し", featHowDA: "（過去の投票ラウンドを指定して取得）", featLive: "を数秒ごとに呼び出し",
       tapHint: "通貨をタップすると、チャートが出るで。",
       close: "閉じる", range24h: "24時間", range3d: "3日間",
       chartLoading: "過去の価格をチェーンから読み込み中…",
       chartFail: "過去の価格を読み込めへんかったわ。少し待ってもう一回開いてな。",
       chartFailLong: "3日前までの価格は、いまの公開RPCから読めへんかったわ。24時間で見てな。",
-      chartNote: (h) => `FTSOv2の価格を、${h}時間ごとに過去のブロックから読み出して描いとる（右端はライブで更新）。取引所やなくて、Flareのオラクルの価格や。`,
+      chartNote: (h) => `FTSOの価格を${h}時間ごとに描いとる。上がっとったら緑、下がっとったら赤や。取引所やなくて、Flareのオラクルの価格やで。`,
       since: (p) => "開いてから " + p,
       ftsoUpd: (t) => "FTSO更新 " + t,
       updated: (t) => "更新 " + t,
@@ -892,17 +893,18 @@
     },
     en: {
       locale: "en-US",
+      rangeLive: "Live", chartLiveNote: "FTSOv2 block-latency prices read every few seconds and plotted as they arrive — movement only while this is open.",
       chartPartial: "(some hours couldn't be read from the public RPC and were skipped)",
       chartLiveOnly: "Past prices couldn't be read from the public RPC right now, so this shows live movement since you opened it. Try again a bit later to see history.",
       chartWaitLive: "Collecting live prices — the line grows every few seconds…",
       sinceOpen: "since opened",
-      featTag: "Flare feature", featHow: "called at past block numbers",
+      featTag: "Flare feature", featHow: "called at past block numbers", featHowDA: "(fetched for past voting rounds)", featLive: "called every few seconds",
       tapHint: "Tap a coin to see its chart.",
       close: "Close", range24h: "24h", range3d: "3 days",
       chartLoading: "Loading past prices from the chain…",
       chartFail: "Couldn't load past prices. Please wait a moment and open it again.",
       chartFailLong: "Prices from 3 days ago couldn't be read from the public RPC right now. Please use 24h.",
-      chartNote: (h) => `Drawn from FTSOv2 prices read from past blocks every ${h} hour(s) (the right edge updates live). These are Flare oracle prices, not exchange prices.`,
+      chartNote: (h) => `FTSO prices every ${h} hour(s). Green when up over the period, red when down. These are Flare oracle prices, not exchange prices.`,
       since: (p) => "Since opened " + p,
       ftsoUpd: (t) => "FTSO updated " + t,
       updated: (t) => "Updated " + t,
@@ -942,17 +944,18 @@
     },
     ko: {
       locale: "ko-KR",
+      rangeLive: "실시간", chartLiveNote: "FTSOv2 블록 지연 가격을 몇 초마다 읽어 그대로 선으로 그립니다. 열어 둔 동안의 움직임입니다.",
       chartPartial: "(일부 시간은 공개 RPC에서 읽지 못해 건너뛰었습니다)",
       chartLiveOnly: "지금은 공개 RPC에서 과거 가격을 읽지 못해, 연 뒤의 실시간 움직임을 그리고 있습니다. 조금 뒤 다시 열면 과거 데이터가 나올 수도 있습니다.",
       chartWaitLive: "실시간 가격을 모으는 중입니다. 몇 초마다 선이 늘어납니다…",
       sinceOpen: "연 뒤로",
-      featTag: "사용하는 기능", featHow: "를 과거 블록 번호를 지정해 호출",
+      featTag: "사용하는 기능", featHow: "를 과거 블록 번호를 지정해 호출", featHowDA: "(과거 투표 라운드를 지정해 가져옴)", featLive: "를 몇 초마다 호출",
       tapHint: "코인을 누르면 차트가 나옵니다.",
       close: "닫기", range24h: "24시간", range3d: "3일",
       chartLoading: "과거 가격을 체인에서 불러오는 중…",
       chartFail: "과거 가격을 불러오지 못했습니다. 잠시 후 다시 열어 주세요.",
       chartFailLong: "3일 전까지의 가격은 지금 공개 RPC에서 읽을 수 없었습니다. 24시간으로 봐 주세요.",
-      chartNote: (h) => `FTSOv2 가격을 ${h}시간마다 과거 블록에서 읽어 그렸습니다(오른쪽 끝은 실시간 갱신). 거래소가 아닌 Flare 오라클의 가격입니다.`,
+      chartNote: (h) => `FTSO 가격을 ${h}시간 간격으로 그렸습니다. 기간 동안 오르면 초록, 내리면 빨강입니다. 거래소가 아닌 Flare 오라클의 가격입니다.`,
       since: (p) => "연 뒤로 " + p,
       ftsoUpd: (t) => "FTSO 갱신 " + t,
       updated: (t) => "갱신 " + t,
@@ -1424,6 +1427,8 @@
 
   // ---------- price chart (tap a card) ----------
   const RANGES = { d1: { hours: 24, step: 1 }, d3: { hours: 72, step: 3 } };
+  const rangeLabel = (r) => M(r === "live" ? "rangeLive" : r === "d1" ? "range24h" : "range3d");
+
   const histCache = {};   // range -> Promise<[{t, prices:{SYM:v}}]>
   let chartSym = null, chartRange = "d1", chartPts = [], liveTail = [];
   const sheet = $("chartSheet");
@@ -1444,7 +1449,47 @@
   // 過去の価格：1回ずつ別々に問い合わせて、時間がかかりすぎたら諦める（公開RPCが詰まっても止まらへんように）
   const histProvider = new ethers.JsonRpcProvider(RPC, 14, { staticNetwork: true, batchMaxCount: 1 });
   const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))]);
+  // 過去の価格（1）：FlareのDA Layerから、過去の投票ラウンドのアンカー価格を取る
+  async function fetchHistoryDA(range, onProgress) {
+    const { hours, step } = RANGES[range];
+    const fsmA = await resolve("FlareSystemsManager");
+    const fsmC = new ethers.Contract(fsmA, ["function getCurrentVotingEpochId() view returns (uint32)"], provider);
+    const cur = Number(await withTimeout(fsmC.getCurrentVotingEpochId(), 8000)) - 1;
+    const now = Date.now();
+    const rounds = [];
+    for (let h = hours; h >= step; h -= step) rounds.push(cur - Math.round(h * 3600 / 90));
+    rounds.push(cur);
+    const out = []; let done = 0, fail = 0;
+    const queue = rounds.slice();
+    const one = async (r) => {
+      try {
+        const res = await withTimeout(fetch(DA_URL + "?voting_round_id=" + r, { method: "POST", headers: { "Content-Type": "application/json", "accept": "application/json" }, body: JSON.stringify({ feed_ids: FEED_IDS }) }), 8000);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const data = await res.json();
+        const prices = {};
+        for (const d of data) {
+          const b = d.body || d;
+          const name = ethers.toUtf8String(ethers.getBytes(b.id).slice(1)).replace(/\0+$/, "").replace("/USD", "");
+          prices[name] = Number(b.value) / Math.pow(10, Number(b.decimals));
+        }
+        out.push({ t: now - (cur - r) * 90000, prices });
+      } catch (e) { fail++; }
+      done++; if (onProgress) onProgress(done, rounds.length);
+      if (done >= 4 && out.length === 0) queue.length = 0;
+    };
+    await Promise.all(Array.from({ length: 6 }, async () => { while (queue.length) await one(queue.shift()); }));
+    out.sort((x, y) => x.t - y.t);
+    return { pts: out, total: rounds.length, src: "da" };
+  }
+  // 過去の価格（2）：公開RPCで、過去のブロックの時点のFTSOv2を読む（DA Layerがだめなとき用）
   async function fetchHistory(range, onProgress) {
+    try {
+      const r = await fetchHistoryRPC(range, onProgress);
+      if (r.pts.length >= 3) return r;
+    } catch (e) { console.error(e); }
+    return fetchHistoryDA(range, onProgress);
+  }
+  async function fetchHistoryRPC(range, onProgress) {
     const { hours, step } = RANGES[range];
     const ftsoAddr = await resolve("FtsoV2");
     const hist = new ethers.Contract(ftsoAddr, ["function getFeedsById(bytes21[]) payable returns (uint256[] values, int8[] decimals, uint64 timestamp)"], histProvider);
@@ -1453,6 +1498,7 @@
     try { const back = await withTimeout(histProvider.getBlock(latest.number - 5000), 8000); bt = (latest.timestamp - back.timestamp) / 5000 || bt; } catch (e) {}
     const tags = [];
     for (let h = hours; h >= step; h -= step) tags.push(Math.max(1, latest.number - Math.round(h * 3600 / bt)));
+    tags.push(latest.number);
     const out = []; let done = 0;
     const queue = tags.slice();
     const one = async (tag) => {
@@ -1465,14 +1511,20 @@
       done++; if (onProgress) onProgress(done, tags.length);
       if (done >= 4 && out.length === 0) queue.length = 0;   // 最初の4件が全滅なら、待たずにあきらめる
     };
-    await Promise.all(Array.from({ length: 4 }, async () => { while (queue.length) await one(queue.shift()); }));
+    await Promise.all(Array.from({ length: 6 }, async () => { while (queue.length) await one(queue.shift()); }));
     out.sort((x, y) => x.t - y.t);
-    return { pts: out, total: tags.length };
+    return { pts: out, total: tags.length, src: "rpc" };
   }
-  let chartLiveOnly = false;
+  let chartLiveOnly = false, chartSrc = "rpc";
   async function loadChart() {
     const sym = chartSym, range = chartRange;
     chartLiveOnly = false;
+    if (range === "live") {
+      chartPts = last[sym] ? [{ t: Date.now(), v: last[sym] }] : [];
+      liveTail = [];
+      $("chartBody").innerHTML = `<div class="chart-msg">${M("chartWaitLive")}</div>`;
+      return;
+    }
     $("chartBody").innerHTML = `<div class="chart-msg" id="chartMsg">${M("chartLoading")}</div>`;
     const prog = (d, n) => { const m = $("chartMsg"); if (m && sym === chartSym && range === chartRange) m.textContent = `${M("chartLoading")} ${d}/${n}`; };
     let res = null;
@@ -1483,7 +1535,7 @@
     if (sym !== chartSym || range !== chartRange) return;
     const pts = res ? res.pts.map(p => ({ t: p.t, v: p.prices[sym] })).filter(p => p.v > 0) : [];
     if (pts.length >= 3) {
-      chartPts = pts;
+      chartPts = pts; chartSrc = res.src || "rpc"; renderFeat();
       $("chartNote").textContent = M("chartNote", RANGES[range].step) + (res.pts.length < res.total ? " " + M("chartPartial") : "");
       drawChart();
     } else {
@@ -1497,23 +1549,32 @@
   }
   function chartAppendLive(sym, v) {
     if (sheet.hidden || sym !== chartSym) return;
-    if (!chartPts.length) { if (!chartLiveOnly) return; chartPts = [{ t: Date.now(), v }]; return; }
+    if (chartRange !== "live" && !chartLiveOnly) return;   // 24時間・3日間は、決まった間隔の点だけで描く
+    if (!chartPts.length) { if (!chartLiveOnly && chartRange !== "live") return; chartPts = [{ t: Date.now(), v }]; return; }
     liveTail.push({ t: Date.now(), v });
     if (liveTail.length > 600) liveTail.shift();
     drawChart();
   }
+  function renderFeat() {
+    const tag = `<span class="tag">${M("featTag")}</span>`;
+    $("chartFeat").innerHTML = (chartRange === "live" || chartLiveOnly) ? `${tag}FTSOv2 — <code>FtsoV2.getFeedsById(bytes21[])</code> ${M("featLive")}`
+      : chartSrc === "da" ? `${tag}FTSO Scaling — DA Layer <code>anchor-feeds-with-proof?voting_round_id=…</code> ${M("featHowDA")}`
+      : `${tag}FTSOv2 — <code>FtsoV2.getFeedsById(bytes21[])</code> ${M("featHow")}`;
+  }
   function renderChartFrame() {
     const name = (FEEDS.find(f => f[0] === chartSym) || [chartSym, ""])[1];
     $("chartTitle").innerHTML = `${chartSym}/USD <span>${name}</span>`;
-    document.querySelectorAll("#chartRange [data-r]").forEach(b => { b.textContent = M(b.dataset.r === "d1" ? "range24h" : "range3d"); b.setAttribute("aria-pressed", String(b.dataset.r === chartRange)); });
-    $("chartNote").textContent = chartLiveOnly ? M("chartLiveOnly") : M("chartNote", RANGES[chartRange].step);
-    $("chartFeat").innerHTML = `<span class="tag">${M("featTag")}</span>FTSOv2 — <code>FtsoV2.getFeedsById(bytes21[])</code> ${M("featHow")}`;
+    document.querySelectorAll("#chartRange [data-r]").forEach(b => { b.textContent = rangeLabel(b.dataset.r); b.setAttribute("aria-pressed", String(b.dataset.r === chartRange)); });
+    $("chartNote").textContent = chartRange === "live" ? M("chartLiveNote") : chartLiveOnly ? M("chartLiveOnly") : M("chartNote", RANGES[chartRange].step);
+    renderFeat();
     $("chartNow").textContent = last[chartSym] ? fmtPrice(last[chartSym]) : "—";
     $("chartChg").textContent = "";
   }
   function drawChart() {
     const pts = chartPts.concat(liveTail);
     if (pts.length < 2) return;
+    const upDir = pts[pts.length - 1].v >= pts[0].v;
+    const LC = upDir ? "#22C55E" : "#F87171";
     const W = Math.max(300, Math.round($("chartBody").clientWidth || 640)), H = W < 500 ? 230 : 280, L = 4, R = 70, T = 14, B = 28;
     const t0 = pts[0].t, t1 = pts[pts.length - 1].t;
     let lo = Math.min(...pts.map(p => p.v)), hi = Math.max(...pts.map(p => p.v));
@@ -1532,22 +1593,22 @@
     for (let i = 0; i <= nx; i++) {
       const t = t0 + span * i / nx;
       const d = new Date(t);
-      const lab = span > 36 * 3600e3 ? d.toLocaleDateString(loc, { month: "numeric", day: "numeric" }) + " " + d.toLocaleTimeString(loc, { hour: "2-digit" }) : d.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" });
+      const lab = span < 15 * 60e3 ? d.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : span > 36 * 3600e3 ? d.toLocaleDateString(loc, { month: "numeric", day: "numeric" }) + " " + d.toLocaleTimeString(loc, { hour: "2-digit" }) : d.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" });
       xt += `<text x="${x(t)}" y="${H - 8}" class="ax" text-anchor="${i === 0 ? "start" : i === nx ? "end" : "middle"}">${lab}</text>`;
     }
     const lastP = pts[pts.length - 1];
     $("chartBody").innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="chart-svg" role="img" aria-label="${chartSym}/USD">
-      <defs><linearGradient id="cg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#FF4D7D" stop-opacity=".28"/><stop offset="1" stop-color="#FF4D7D" stop-opacity="0"/></linearGradient></defs>
-      ${ticks}<path d="${area}" fill="url(#cg)"/><path d="${line}" fill="none" stroke="#FF4D7D" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-      <circle cx="${x(lastP.t)}" cy="${y(lastP.v)}" r="4" fill="#FF4D7D" stroke="#16161D" stroke-width="2"/>
+      <defs><linearGradient id="cg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${LC}" stop-opacity=".28"/><stop offset="1" stop-color="${LC}" stop-opacity="0"/></linearGradient></defs>
+      ${ticks}<path d="${area}" fill="url(#cg)"/><path d="${line}" fill="none" stroke="${LC}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="${x(lastP.t)}" cy="${y(lastP.v)}" r="4" fill="${LC}" stroke="#16161D" stroke-width="2"/>
       ${xt}
-      <g id="cx" visibility="hidden"><line id="cxL" y1="${T}" y2="${H - B}" class="cxl"/><circle id="cxD" r="4.5" fill="#FF4D7D" stroke="#16161D" stroke-width="2"/></g>
+      <g id="cx" visibility="hidden"><line id="cxL" y1="${T}" y2="${H - B}" class="cxl"/><circle id="cxD" r="4.5" fill="${LC}" stroke="#16161D" stroke-width="2"/></g>
       <rect x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent" id="cxHit"/>
     </svg><div class="chart-tip" id="chartTip" hidden></div>`;
     const first = pts[0].v, pct = (lastP.v - first) / first * 100;
     $("chartNow").textContent = fmtPrice(lastP.v);
     const ch = $("chartChg");
-    ch.textContent = `${pct >= 0 ? "▲" : "▼"} ${Math.abs(pct).toFixed(2)}% · ${chartLiveOnly ? M("sinceOpen") : M(chartRange === "d1" ? "range24h" : "range3d")}`;
+    ch.textContent = `${pct >= 0 ? "▲" : "▼"} ${Math.abs(pct).toFixed(2)}% · ${chartLiveOnly || chartRange === "live" ? M("sinceOpen") : rangeLabel(chartRange)}`;
     ch.className = "chart-chg " + (pct >= 0 ? "up" : "down");
     // hover / touch crosshair
     const svg = $("chartBody").querySelector("svg"), hit = $("cxHit"), tip = $("chartTip");
@@ -1593,6 +1654,8 @@
   // ---------- start ----------
   $("priceHint").textContent = M("tapHint");
   $("chartClose").setAttribute("aria-label", M("close"));
+  // 24時間チャートの過去分は、ページを開いて少ししたら裏で読み込んでおく（タップしたらすぐ出るように）
+  setTimeout(() => { if (!histCache.d1) histCache.d1 = fetchHistory("d1").then(r => { if (r.pts.length < 3) delete histCache.d1; return r; }).catch(e => { delete histCache.d1; throw e; }); }, 3000);
   loadPrices(); loadBlock(); loadFxrp(); loadNet();
   resolve("RandomNumberV2", "rngAddr").catch(() => {});
   resolve("WNat", "wnatAddr").catch(() => {});
