@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>エアドロ太郎のFlareノート｜ツール</title>
+<meta content="Flare Networkの機能（FTSOv2・セキュア乱数・委任）をブラウザだけで体験できる、エアドロ太郎が個人で運営する非公式ツール集。ウォレット接続不要。" name="description"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Sans+KR:wght@400;500;700;900&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --bg:#0B0B0F; --bg2:#121218; --card:#16161D; --line:#26262F;
+    --text:#F5F5F7; --sub:#A1A1AA; --mute:#6B6B76;
+    --flare:#E62058; --flare2:#FF4D7D; --flare-soft:rgba(230,32,88,.12);
+    --ok:#22C55E; --warn:#F59E0B; --down:#F87171;
+    --radius:16px;
+    --font:"Inter","Noto Sans JP",system-ui,-apple-system,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.7;-webkit-font-smoothing:antialiased}
+  a{color:var(--flare2);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+
+  /* header */
+  header.top{position:sticky;top:0;z-index:20;background:rgba(11,11,15,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  header.top .wrap{display:flex;align-items:center;justify-content:space-between;height:60px;gap:12px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.01em;color:var(--text)}
+  .brand:hover{text-decoration:none}
+  .mark{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--flare),#FF7A59);display:grid;place-items:center;font-size:12px;font-weight:900;color:#fff}
+  .brand small{font-weight:500;color:var(--sub);font-size:12px;border:1px solid var(--line);border-radius:999px;padding:1px 8px;margin-left:2px}
+  nav.jump{display:flex;gap:4px}
+  nav.jump a{color:var(--sub);font-size:13px;padding:6px 10px;border-radius:999px}
+  nav.jump a:hover{color:var(--text);background:var(--card);text-decoration:none}
+  @media (max-width:640px){nav.jump{display:none}}
+
+  /* hero */
+  .hero{position:relative;overflow:hidden;padding:72px 0 48px}
+  .hero::before{content:"";position:absolute;inset:-40% -10% auto auto;width:640px;height:640px;background:radial-gradient(circle,rgba(230,32,88,.35),transparent 60%);filter:blur(20px);pointer-events:none}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--flare2);background:var(--flare-soft);border:1px solid rgba(230,32,88,.35);padding:4px 12px;border-radius:999px}
+  .hero h1{font-size:clamp(32px,6vw,56px);line-height:1.15;letter-spacing:-.02em;margin:18px 0 14px;font-weight:900}
+  .hero h1 em{font-style:normal;background:linear-gradient(90deg,var(--flare),#FF7A59);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p.lead{color:var(--sub);font-size:clamp(15px,2.2vw,18px);max-width:640px;margin:0 0 24px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{font-size:13px;color:var(--sub);border:1px solid var(--line);background:var(--bg2);padding:6px 12px;border-radius:999px}
+  .chip b{color:var(--text);font-weight:600}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--mute);margin-right:6px;vertical-align:middle}
+  .dot.live{background:var(--ok);box-shadow:0 0 0 0 rgba(34,197,94,.6);animation:pulse 2s infinite}
+  .dot.err{background:var(--down)}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.6)}70%{box-shadow:0 0 0 8px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+
+  /* sections */
+  section.tool{padding:56px 0;border-top:1px solid var(--line)}
+  .sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+  .sec-num{font-family:var(--mono);color:var(--flare2);font-size:13px;font-weight:600}
+  .sec-head h2{margin:4px 0 0;font-size:clamp(24px,4vw,34px);letter-spacing:-.01em;font-weight:900}
+  .sec-head p{margin:6px 0 0;color:var(--sub);max-width:620px}
+  .updated{font-size:12px;color:var(--mute);font-family:var(--mono)}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+
+  /* prices */
+  .prices{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+  .price{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;transition:border-color .3s}
+  .price .sym{display:flex;align-items:center;justify-content:space-between;font-weight:700;font-size:14px}
+  .price .sym span{color:var(--mute);font-weight:500;font-size:12px}
+  .price .val{font-family:var(--mono);font-size:clamp(17px,4.6vw,22px);font-weight:600;margin-top:6px;letter-spacing:-.02em;transition:color .6s}
+  .price .chg{font-size:12px;color:var(--mute);font-family:var(--mono);margin-top:2px}
+  .price.up .val{color:var(--ok)} .price.down .val{color:var(--down)}
+  .price.hl{border-color:rgba(230,32,88,.55);background:linear-gradient(180deg,rgba(230,32,88,.10),var(--card) 70%)}
+  .skeleton{color:var(--mute)!important}
+
+  /* explain box */
+  .explain{margin-top:20px;display:grid;grid-template-columns:1.3fr 1fr;gap:16px}
+  @media (max-width:820px){.explain{grid-template-columns:1fr}}
+  .explain h3{margin:0 0 8px;font-size:15px;display:flex;align-items:center;gap:8px}
+  .explain h3 .tag{font-size:11px;font-weight:700;color:#fff;background:var(--flare);border-radius:6px;padding:2px 8px}
+  .explain p,.explain li{color:var(--sub);font-size:14px}
+  .explain ul{padding-left:18px;margin:8px 0 0}
+  .explain code,.mono{font-family:var(--mono);font-size:12.5px;color:var(--text);background:var(--bg2);border:1px solid var(--line);padding:1px 6px;border-radius:6px;word-break:break-all}
+  .links{display:flex;flex-direction:column;gap:8px}
+  .links a{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;color:var(--text);background:var(--bg2);font-size:14px}
+  .links a:hover{border-color:var(--flare);text-decoration:none}
+  .links a .k{font-size:11px;color:var(--flare2);font-weight:700;letter-spacing:.04em}
+  .links a .t{flex:1}
+  .links a .arr{color:var(--mute)}
+
+  /* forms */
+  label.lbl{display:block;font-size:13px;color:var(--sub);margin:0 0 6px;font-weight:500}
+  textarea,input[type=text],input[type=number]{width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--text);border-radius:12px;padding:12px 14px;font:inherit;font-size:16px;outline:none}
+  textarea{min-height:150px;resize:vertical;font-size:15px}
+  textarea:focus,input:focus{border-color:var(--flare)}
+  .row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-top:14px}
+  .row .grow{flex:1;min-width:140px}
+  button.btn,a.btn{appearance:none;border:0;border-radius:12px;background:var(--flare);color:#fff;font:inherit;font-weight:700;font-size:15px;padding:13px 22px;cursor:pointer;transition:transform .1s,background .2s}
+  button.btn:hover,a.btn:hover{text-decoration:none;color:#fff;background:var(--flare2)}
+  button.btn:active{transform:scale(.98)}
+  button.btn:disabled{opacity:.5;cursor:default}
+  button.ghost{background:transparent;border:1px solid var(--line);color:var(--sub);font-weight:600}
+  button.ghost:hover{background:var(--bg2);color:var(--text)}
+  .note{font-size:12.5px;color:var(--mute);margin-top:10px}
+  .err-msg{color:var(--down);font-size:14px;margin-top:10px}
+
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:820px){.two{grid-template-columns:1fr}}
+
+  /* lottery result */
+  .winners{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+  .winners li{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-weight:700;font-size:16px;animation:pop .35s ease both}
+  .winners li .rank{font-family:var(--mono);font-size:12px;color:#fff;background:var(--flare);border-radius:8px;padding:2px 8px}
+  @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .empty{color:var(--mute);font-size:14px;text-align:center;padding:36px 10px;border:1px dashed var(--line);border-radius:12px}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:13px;margin-top:14px}
+  .kv dt{color:var(--mute)} .kv dd{margin:0;word-break:break-all}
+  .badge{white-space:nowrap;display:inline-block;font-size:12px;font-weight:700;border-radius:6px;padding:1px 8px}
+  .badge.ok{background:rgba(34,197,94,.15);color:var(--ok)} .badge.ng{background:rgba(248,113,113,.15);color:var(--down)}
+
+  /* checker */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+  @media (max-width:640px){.stats{grid-template-columns:1fr}}
+  .stat{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .stat .k{font-size:12px;color:var(--mute)}
+  .stat .v{font-family:var(--mono);font-size:19px;font-weight:600;margin-top:2px;word-break:break-all}
+  .stat .v small{font-size:12px;color:var(--sub);font-weight:400}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+  th{color:var(--mute);font-weight:500;font-size:12px}
+  td.num,th.num{text-align:right;font-family:var(--mono)}
+  .bar{height:6px;background:var(--bg2);border-radius:99px;overflow:hidden;margin-top:4px}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--flare),#FF7A59)}
+  .sub-h{font-size:15px;font-weight:700;margin:22px 0 8px}
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  #proofWrap table,#fxrp table{min-width:560px}
+  .search{max-width:280px}
+
+
+  /* convert */
+  .conv{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:end}
+  @media (max-width:640px){.conv{grid-template-columns:1fr}.conv-swap{justify-self:center}}
+  .conv-side{display:flex;flex-direction:column;gap:8px}
+  .conv-out{font-family:var(--mono);font-size:clamp(22px,5vw,30px);font-weight:600;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:8px 14px;min-height:52px;word-break:break-all}
+  .conv-out small{font-size:14px;color:var(--sub)}
+  select.sel{width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--text);border-radius:12px;padding:12px 14px;font:inherit;font-size:16px}
+  .conv-swap{padding:12px 16px!important;font-size:18px!important}
+  .net-stats{grid-template-columns:repeat(3,1fr)}
+  @media (max-width:640px){.net-stats{grid-template-columns:1fr 1fr}}
+  nav.jump{overflow-x:auto;max-width:62vw;scrollbar-width:none}
+  nav.jump a{white-space:nowrap}
+
+  @media (max-width:640px){
+    .brand{font-size:14px;gap:8px;min-width:0}
+    .brand small{display:none}
+    .brand{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .lang-btn{padding:6px 10px}
+  }
+
+  /* chart sheet */
+  .price[data-sym]{cursor:pointer;transition:border-color .2s,transform .1s}
+  .price[data-sym]:hover{border-color:rgba(230,32,88,.6)}
+  .price[data-sym]:active{transform:scale(.98)}
+  .price[data-sym]:focus-visible{outline:2px solid var(--flare2);outline-offset:2px}
+  .cico{vertical-align:-2px;margin-left:6px;color:var(--flare2)}
+  body.noscroll{overflow:hidden}
+  .sheet{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px}
+  .sheet[hidden]{display:none}
+  .sheet-panel{width:100%;max-width:720px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  @media (max-width:640px){.sheet{align-items:flex-end;padding:0}.sheet-panel{border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}}
+  .sheet-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+  .chart-title{font-weight:800;font-size:18px}
+  .chart-title span{color:var(--mute);font-weight:500;font-size:13px;margin-left:6px}
+  .chart-now{font-family:var(--mono);font-size:26px;font-weight:600;margin-top:2px}
+  .chart-chg{font-size:14px;font-weight:600;margin-left:6px}
+  .chart-chg.up{color:var(--ok)} .chart-chg.down{color:var(--down)}
+  .sheet-x{background:var(--bg2);border:1px solid var(--line);color:var(--sub);width:36px;height:36px;border-radius:50%;font-size:15px;cursor:pointer;flex:none}
+  .sheet-x:hover{color:var(--text)}
+  .seg{display:inline-flex;background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:3px;margin:14px 0 6px}
+  .seg button{background:none;border:0;color:var(--sub);font:inherit;font-size:13px;font-weight:600;padding:6px 14px;border-radius:999px;cursor:pointer}
+  .seg button[aria-pressed="true"]{background:var(--card);color:var(--text);box-shadow:0 0 0 1px var(--line)}
+  .chart-body{position:relative;min-height:230px}
+  .chart-svg{width:100%;height:auto;display:block;touch-action:pan-y}
+  .chart-svg .g{stroke:var(--line);stroke-width:1}
+  .chart-svg .ax{fill:var(--mute);font-family:var(--mono);font-size:11px}
+  .chart-svg .cxl{stroke:var(--sub);stroke-width:1;stroke-dasharray:3 3}
+  .chart-msg{display:grid;place-items:center;min-height:230px;color:var(--sub);font-size:14px;text-align:center;padding:0 10px}
+  .chart-tip{position:absolute;transform:translateX(-50%);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:12px;pointer-events:none;white-space:nowrap;display:flex;flex-direction:column;align-items:center;box-shadow:0 6px 18px rgba(0,0,0,.4)}
+  .chart-tip[hidden]{display:none}
+  .chart-feat{margin-top:12px;font-size:13px;color:var(--sub);display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .chart-feat .tag{font-size:11px;font-weight:700;color:#fff;background:var(--flare);border-radius:6px;padding:2px 8px}
+  .chart-feat code{font-family:var(--mono);font-size:12px;color:var(--text);background:var(--bg2);border:1px solid var(--line);padding:1px 6px;border-radius:6px}
+  .chart-tip b{font-family:var(--mono);font-size:14px}
+  .chart-tip span{color:var(--mute)}
+
+  /* tool index */
+  .toc-sec{padding:8px 0 40px}
+  .toc-title{font-size:13px;font-weight:700;color:var(--sub);letter-spacing:.04em;margin-bottom:12px}
+  .toc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  @media (max-width:820px){.toc-grid{grid-template-columns:1fr 1fr}}
+  @media (max-width:340px){.toc-grid{grid-template-columns:1fr}}
+  .toc-card{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto auto;column-gap:12px;row-gap:2px;padding:14px 16px;background:var(--card);border:1px solid var(--line);border-radius:14px;color:var(--text);transition:border-color .2s,transform .1s}
+  .toc-card:hover{border-color:var(--flare);text-decoration:none}
+  .toc-card:active{transform:scale(.98)}
+  .toc-card .n{grid-row:1/4;font-family:var(--mono);font-size:13px;font-weight:600;color:var(--flare2);padding-top:2px}
+  .toc-card b{font-size:15px;line-height:1.4}
+  .toc-card .d{font-size:12.5px;color:var(--sub);line-height:1.5}
+  .toc-card .f{font-size:11px;color:var(--mute);font-family:var(--mono);margin-top:2px}
+  @media (max-width:640px){.toc-card{grid-template-columns:1fr;padding:12px 14px}.toc-card .n{grid-row:auto;font-size:12px}.toc-card b{font-size:14px}}
+  section.tool{scroll-margin-top:64px}
+  .totop{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:40;width:44px;height:44px;border-radius:50%;background:var(--flare);color:#fff;border:0;font-size:18px;box-shadow:0 8px 20px rgba(0,0,0,.4);cursor:pointer;opacity:0;pointer-events:none;transition:opacity .2s}
+  .totop.show{opacity:1;pointer-events:auto}
+
+  /* language switcher */
+  .lang{position:relative;flex:none}
+  .lang-btn{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+  .lang-btn:hover{border-color:var(--flare)}
+  .lang-menu{position:absolute;right:0;top:calc(100% + 8px);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px;min-width:140px;box-shadow:0 12px 30px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:2px}
+  .lang-menu[hidden]{display:none}
+  .lang-menu button{background:none;border:0;color:var(--sub);font:inherit;font-size:14px;text-align:left;padding:9px 12px;border-radius:8px;cursor:pointer}
+  .lang-menu button:hover{background:var(--bg2);color:var(--text)}
+  .lang-menu button[aria-current="true"]{color:var(--text);font-weight:700}
+  .lang-menu button[aria-current="true"]::after{content:" ✓";color:var(--flare2)}
+  html:lang(ko) body{font-family:"Inter","Noto Sans KR","Noto Sans JP",system-ui,sans-serif}
+
+  /* mcp guides */
+  .plist{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+  .plist li{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:14px}
+  .plist li::before{content:"💬 ";}
+  .guides{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:820px){.guides{grid-template-columns:1fr}}
+  details.guide{padding:0}
+  details.guide summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 20px}
+  details.guide summary::-webkit-details-marker{display:none}
+  details.guide summary::after{content:"＋";color:var(--flare2);font-weight:700}
+  details.guide[open] summary::after{content:"－"}
+  details.guide .gname{font-weight:800;font-size:17px;flex:1}
+  details.guide .gtag{font-size:11px;color:var(--sub);border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+  details.guide ol{margin:0;padding:0 20px 0 40px;color:var(--sub);font-size:14px}
+  details.guide ol li{margin-bottom:6px}
+  details.guide ol b{color:var(--text)}
+  details.guide .note{padding:0 20px}
+  details.guide .glink{display:inline-block;margin:8px 20px 18px;font-size:13px;font-weight:600}
+  details.guide > *:last-child{margin-bottom:18px}
+
+  footer{border-top:1px solid var(--line);padding:40px 0 60px;color:var(--mute);font-size:13px}
+  footer .cols{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:24px}
+  footer .fnote{display:block;font-size:12px;color:var(--mute);margin-top:2px}
+  .byline{margin:16px 0 0;font-size:13px;color:var(--sub)}
+  .byline a{font-weight:600}
+  @media (max-width:720px){footer .cols{grid-template-columns:1fr}}
+  footer h4{color:var(--text);font-size:13px;margin:0 0 8px}
+  footer ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+  footer a{color:var(--sub)}
+</style>
+</head>
+<body>
+<header class="top">
+<div class="wrap">
+<a class="brand" data-i18n="t1" href="#top"><span class="mark">太</span>エアドロ太郎のFlareノート <small>非公式</small></a>
+<nav class="jump" data-i18n="t2">
+<a href="#prices">価格</a>
+<a href="#convert">換算</a>
+<a href="#proof">証明</a>
+<a href="#fxrp">FXRP</a>
+<a href="#smart">Smart Accounts</a>
+<a href="#lottery">抽選</a>
+<a href="#delegation">委任</a>
+<a href="#network">ネットワーク</a>
+<a href="#mcp">AI</a>
+</nav>
+<div class="lang">
+<button type="button" id="langBtn" class="lang-btn" aria-haspopup="true" aria-expanded="false" aria-label="Language / 言語 / 언어"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c2.6 2.8 3.9 6 3.9 9.5s-1.3 6.7-3.9 9.5M12 2.5C9.4 5.3 8.1 8.5 8.1 12s1.3 6.7 3.9 9.5"/></svg><span id="langCur">日本語</span></button>
+<div class="lang-menu" id="langMenu" hidden>
+<button type="button" data-lang="ja">日本語</button>
+<button type="button" data-lang="en">English</button>
+<button type="button" data-lang="ko">한국어</button>
+</div>
+</div>
+</div>
+</header>
+<main id="top">
+<section class="hero">
+<div class="wrap">
+<span class="eyebrow" data-i18n="t3">ウォレット接続なし・FLR不要</span>
+<h1 data-i18n="t4">Flareの機能を、<br/><em>ブラウザだけで体験。</em></h1>
+<p class="lead" data-i18n="t5">Flare Networkのオラクル（FTSOv2）、セキュアな乱数、FTSO委任のデータを、チェーンから直接読み込んで表示しとるツール集やで。数字はすべてFlareメインネットの「いま」の値や。</p>
+<div class="chips" data-i18n="t6">
+<span class="chip"><span class="dot" id="netDot"></span><b id="netStatus">接続中…</b></span>
+<span class="chip">ブロック <b id="blockNo">—</b></span>
+<span class="chip">ネットワーク <b>Flare メインネット</b></span>
+</div>
+<p class="byline" data-i18n="y1">作った人：<a href="https://x.com/eadorotarou" rel="noopener" target="_blank">@eadorotarou</a>（エアドロ太郎・個人運営、非公式）</p>
+</div>
+</section>
+<section class="toc-sec" id="tools">
+<div class="wrap">
+<div class="toc-title" data-i18n="x0">ツール一覧</div>
+<div class="toc-grid">
+<a class="toc-card" href="#prices" data-i18n="x1"><span class="n">01</span><b>ライブ価格ボード</b><span class="d">FLRやXRPの今の価格。タップでチャート</span><span class="f">FTSOv2</span></a>
+<a class="toc-card" href="#convert" data-i18n="x2"><span class="n">02</span><b>XRP ⇔ FLR 換算</b><span class="d">XRP何枚が何FLRかを一発で計算</span><span class="f">FTSOv2</span></a>
+<a class="toc-card" href="#proof" data-i18n="x3"><span class="n">03</span><b>価格の「証明」をチェック</b><span class="d">正式な価格が本物かをチェーンで確認</span><span class="f">FTSO Scaling</span></a>
+<a class="toc-card" href="#fxrp" data-i18n="x4"><span class="n">04</span><b>FXRPダッシュボード</b><span class="d">発行量とエージェントの一覧</span><span class="f">FAssets</span></a>
+<a class="toc-card" href="#smart" data-i18n="x5"><span class="n">05</span><b>Smart Accountsチェッカー</b><span class="d">XRPLアドレスのFlare側アカウント</span><span class="f">Smart Accounts</span></a>
+<a class="toc-card" href="#lottery" data-i18n="x6"><span class="n">06</span><b>Flare乱数で抽選</b><span class="d">操作できへん乱数でプレゼント抽選</span><span class="f">Secure Random</span></a>
+<a class="toc-card" href="#delegation" data-i18n="x7"><span class="n">07</span><b>委任チェッカー</b><span class="d">残高・委任先・未請求の報酬</span><span class="f">FTSO Delegation</span></a>
+<a class="toc-card" href="#network" data-i18n="x8"><span class="n">08</span><b>ネットワークの状態</b><span class="d">ブロック、ガス代、ラウンドとエポック</span><span class="f">Flare Systems Protocol</span></a>
+<a class="toc-card" href="#mcp" data-i18n="x9"><span class="n">09</span><b>AIにFlareをつなぐ</b><span class="d">Claude・ChatGPTなどへの追加方法</span><span class="f">Flare MCP Server</span></a>
+</div>
+</div>
+</section>
+<!-- PRICES -->
+<section class="tool" id="prices">
+<div class="wrap">
+<div class="sec-head">
+<div>
+<div class="sec-num">01 / FTSOv2</div>
+<h2 data-i18n="t7">ライブ価格ボード</h2>
+<p data-i18n="t8">取引所やなくて、Flareのオラクル「FTSOv2」から直接取ってきた価格や。数秒ごとに勝手に更新されるで。</p>
+</div>
+<div class="updated" id="priceTime">—</div>
+</div>
+<div class="prices" id="priceGrid"></div>
+<div class="note" id="priceHint"></div>
+<div class="explain">
+<div class="card">
+<h3 data-i18n="t9"><span class="tag">使っている機能</span>FTSOv2（Flare Time Series Oracle）</h3>
+<p data-i18n="t10">FTSOv2は、Flareに組み込まれた分散型のオラクルや。約100のデータプロバイダが価格を出し合って、その結果がチェーン上に記録される。なかでも「ブロックレイテンシ・フィード」はブロックごと（1〜2秒ほど）に更新されて、読むだけやったら手数料もかからへん。</p>
+<ul>
+<li data-i18n="t11">呼んでいる関数：<code>FtsoV2.getFeedsById(bytes21[])</code></li>
+<li data-i18n="t12">コントラクト：<a href="#" id="ftsoAddr" rel="noopener" target="_blank">取得中…</a>（アドレスは公式の<code>FlareContractRegistry</code>から毎回取得）</li>
+<li data-i18n="t13">価格は「値 ÷ 10の小数桁数乗」で計算しとる（例：FLR/USDは小数8桁）</li>
+</ul>
+</div>
+<div class="links" data-i18n="t14">
+<a href="https://dev.flare.network/ftso/overview" rel="noopener" target="_blank"><span class="k">DOCS</span><span class="t">FTSOv2の概要（Developer Hub）</span><span class="arr">↗</span></a>
+<a href="https://dev.flare.network/ftso/getting-started" rel="noopener" target="_blank"><span class="k">DOCS</span><span class="t">FTSOv2の使い方（Getting Started）</span><span class="arr">↗</span></a>
+<a href="https://dev.flare.network/pdf/whitepapers/20240223-FlareTimeSeriesOracleV2.pdf" rel="noopener" target="_blank"><span class="k">WHITEPAPER</span><span class="t">FTSOv2 ホワイトペーパー</span><span class="arr">↗</span></a>
+<a href="https://github.com/flare-foundation/flare-smart-contracts-v2" rel="noopener" target="_blank"><span class="k">GITHUB</span><span class="t">flare-smart-contracts-v2</span><span class="arr">↗</span></a>
+</div>
+</div>
+</div>
+</section>
+<!-- CONVERT -->
+<section class="tool" id="convert">
+<div class="wrap">
+<div class="sec-head">
+<div>
+<div class="sec-num">02 / FTSOv2</div>
+<h2 data-i18n="t15">XRP ⇔ FLR 換算</h2>
+<p data-i18n="t16">「XRP 1,000枚は今何FLR？」みたいな計算が一発でできる。上の価格ボードと同じFTSOの価格を2つ割り算して出しとるで。</p>
+</div>
+</div>
+<div class="card">
+<div class="conv">
+<div class="conv-side">
+<label class="lbl" data-i18n="t17" for="convAmt">数量</label>
+<input id="convAmt" inputmode="decimal" min="0" step="any" type="number" value="1000"/>
+<select class="sel" id="convFrom"></select>
+</div>
+<button aria-label="入れ替え" class="btn ghost conv-swap" data-i18n-aria-label="a1" id="convSwap">⇄</button>
+<div class="conv-side">
+<label class="lbl" data-i18n="t18">換算結果</label>
+<div class="conv-out" id="convOut">—</div>
+<select class="sel" id="convTo"></select>
+</div>
+</div>
+<div class="note" data-i18n="t19" id="convRate">価格を読み込み中…</div>
+</div>
+<div class="explain">
+<div class="card">
+<h3 data-i18n="t20"><span class="tag">使っている機能</span>FTSOv2 のクロスレート</h3>
+<p data-i18n="t21">FTSOの価格はどれも「○○/USD」やから、2つの価格を割り算したら別の組み合わせのレートが出せる。たとえばXRP→FLRは「XRP/USD ÷ FLR/USD」や。2つの価格は同じブロックで読んだもんを使うから、タイミングのずれもない。</p>
+<ul>
+<li data-i18n="t22">呼んでいる関数：<code>FtsoV2.getFeedsById(bytes21[])</code>（価格ボードと共通）</li>
+<li data-i18n="t23">USDを選んだときは、FTSOの値をそのまま使う</li>
+<li data-i18n="t24">取引所で実際に交換するときの値段とは、手数料やスプレッドの分だけずれるで</li>
+</ul>
+</div>
+<div class="links" data-i18n="t25">
+<a href="https://dev.flare.network/ftso/overview" rel="noopener" target="_blank"><span class="k">DOCS</span><span class="t">FTSOv2の概要（Developer Hub）</span><span class="arr">↗</span></a>
+<a href="https://dev.flare.network/pdf/whitepapers/20240223-FlareTimeSeriesOracleV2.pdf" rel="noopener" target="_blank"><span class="k">WHITEPAPER</span><span class="t">FTSOv2 ホワイトペーパー</span><span class="arr">↗</span></a>
+<a href="https://github.com/flare-foundation/flare-smart-contracts-v2" rel="noopener" target="_blank"><span class="k">GITHUB</span><span class="t">flare-smart-contracts-v2</span><span class="arr">↗</span></a>
+</div>
+</div>
+</div>
+</section>
+<!-- PROOF -->
+<section class="tool" id="proof">
+<div class="wrap">
+<div class="sec-head">
+<div>
+<div class="sec-num">03 / FTSO Scaling</div>
+<h2 data-i18n="t26">価格の「証明」をチェック</h2>
+<p data-i18n="t27">FTSOは90秒ごとに、約100のプロバイダの答えから正式な価格（アンカー価格）を決める。その価格が本物かどうかを、証明データを使ってチェーン上で確かめるツールや。</p>
+</div>
+</div>
+<div class="card">
+<div class="row" style="margin-top:0;justify-content:space-between;align-items:center">
+<div class="note" data-i18n="t28" style="margin:0">FLR/USD・XRP/USD・BTC/USDの最新のアンカー価格を取ってきて、1つずつ検証するで。</div>
+<button class="btn" data-i18n="t29" id="proofBtn">証明を取ってきて検証する</button>
+</div>
+<div class="err-msg" hidden="" id="proofErr"></div>
+<div class="tbl-wrap" hidden="" id="proofWrap" style="margin-top:14px"><table>
+<thead><tr><th data-i18n="t30">フィード</th><th class="num" data-i18n="t31">アンカー価格</th><th class="num" data-i18n="t32">参加率</th><th class="num" data-i18n="t33">証明の長さ</th><th data-i18n="t34">チェーンでの検証</th></tr></thead>
+<tbody id="proofTable"></tbody>
+</table></div>
+<div class="note" id="proofNote"></div>
+</div>
+<div class="explain">
+<div class="card">
+<h3 data-i18n="t35"><span class="tag">使っている機能</span>FTSO Scaling（アンカーフィード）とMerkle証明</h3>
+<p data-i18n="t36">90秒ごとの正式な価格は、全部まとめて「Merkleツリー」っていう形にして、その根っこ（Merkleルート）だけをチェーンに記録しとる。個々の価格は、Flareのデータ公開サーバー（DA Layer）から「証明」とセットで受け取れる。その証明をコントラクトに渡すと、記録済みのルートと計算が合うかどうかを確かめてくれるんや。1つでも数字を書き換えたら計算が合わんようになるから、改ざんされてへんことが分かる。</p>
+<ul>
+<li data-i18n="t37">証明の取得：DA Layer API の <code>POST /api/v0/ftso/anchor-feeds-with-proof</code></li>
+<li data-i18n="t38">検証：<code>FtsoV2.verifyFeedData(FeedDataWithProof)</code>（読むだけやからタダ）</li>
+<li data-i18n="t39">コントラクト：<a class="ftsoAddrLink" href="#" rel="noopener" target="_blank">FtsoV2</a></li>
+</ul>
+</div>
+<div class="links" data-i18n="t40">
+<a href="https://dev.flare.network/ftso/scaling/overview" rel="noopener" target="_blank"><span class="k">DOCS</span><span class="t">Scaling（アンカーフィード）の概要</span><span class="arr">↗</span></a>
+<a href="https://dev.flare.network/ftso/scaling/getting-started" rel="noopener" target="_blank"><span class="k">DOCS</span><span class="t">アンカー価格と証明の取り方</span><span class="arr">↗</span></a>
+<a href="https://dev.flare.network/pdf/whitepapers/20240223-FlareTimeSeriesOracleV2.pdf" rel="noopener" target="_blank"><span class="k">WHITEPAPER</span><span class="t">FTSOv2 ホワイトペーパー</span><span class="arr">↗</span></a>
+<a href="https://github.com/flare-foundation/flare-smart-contracts-v2" rel="noopener" target="_blank"><span class="k">GITHUB</span><span class="t">flare-smart-contracts-v2</span><span class="arr">↗</span></a>
+</div>
+</div>
+</div>
+</section>
+<!-- FXRP -->
+<section class="tool" id="fxrp">
+<div class="wrap">
+<div class="sec-head">
+<div>
+<div class="sec-num">04 / FAssets</div>
+<h2 data-i18n="t41">FXRPダッシュボード</h2>
+<p data-i18n="t42">FXRPは、XRPを裏付けにしてFlare上で使えるようにしたトークンや。いま何枚発行されとって、裏付けのXRPを誰が預かっとるかを見られるで。</p>
+</div>
+<div class="updated" id="fxrpTime">—</div>
+</div>
+<div class="stats" style="margin-top:0">
+<div class="stat"><div class="k" data-i18n="t43">FXRPの発行量</div><div class="v" id="fxSupply">—</div></div>
+<div class="stat"><div class="k" data-i18n="t44">ドル換算（FTSOのXRP価格）</div><div class="v" id="fxUsd">—</div></div>
+<div class="stat"><div class="k" data-i18n="t45">コアボールトのXRP</div><div class="v" id="fxCv">—</div></div>
+</div>
+<div class="card" style="margin-top:12px">
+<div class="sub-h" data-i18n="t46" style="margin-top:0">ミントを受け付けとるエージェント</div>
+<div class="tbl-wrap"><table>
+<thead><tr><th data-i18n="t47">エージェント</th><th class="num" data-i18n="t48">ミント手数料</th><th class="num" data-i18n="t49">空きロット</th><th class="num" data-i18n="t50">担保率（ボールト／プール）</th><th data-i18n="t51">状態</th></tr></thead>
+<tbody id="fxAgents"><tr><td colspan="5" data-i18n="t52" style="color:var(--mute)">読み込み中…</td></tr></tbody>
+</table></div>
+<div class="note" id="fxNote"></div>
+</div>
+<div class="explain">
+<div class="card">
+<h3 data-i18n="t53"><span class="tag">使っている機能</span>FAssets（FXRP）</h3>
+<p data-i18n="t54">FAssetsは、XRPみたいにスマートコントラクトがないチェーンの資産を、Flare上で1対1で使えるようにする仕組みや。「エージェント」が担保（ステーブルコインやFLR）を預けてミントを引き受けて、XRPの入金はFDC（Flare Data Connector）で証明される。最近は、預かったXRPを1か所にまとめる「コアボールト」もできて、少ない担保でたくさんミントできるようになったんや。</p>
+<ul>
+<li data-i18n="t55">発行量：<code>FXRP.totalSupply()</code>（トークンのアドレスは <code>AssetManagerFXRP.fAsset()</code> から取得）</li>
+<li data-i18n="t56">エージェント：<code>AssetManagerFXRP.getAvailableAgentsDetailedList(start, end)</code></li>
+<li data-i18n="t57">コアボールト：<code>AssetManagerFXRP.coreVaultAvailableAmount()</code></li>
+<li data-i18n="t58">1ロットの大きさ：<code>AssetManagerFXRP.lotSize()</code></li>
+<li data-i18n="t59">コントラクト：<a href="#" id="amAddr" rel="noopener" target="_blank">取得中…</a></li>
+</ul>
+</div>
+<div class="links" data-i18n="t60">
+<a href="https://dev.flare.network/fassets/overview" rel="noopener" target="_blank"><span class="k">DOCS</span><span class="t">FAssetsの概要（Developer Hub）</span><span class="arr">↗</span></a>
+<a href="https://dev.flare.network/fassets/core-vault" rel="noopener" target="_blank"><span class="k">DOCS</span><span class="t">コアボールトのしくみ</span><span class="arr">↗</span></a>
+<a href="https://dev.flare.network/pdf/whitepapers/20240224-FlareDataConnector.pdf" rel="noopener" target="_blank"><span class="k">WHITEPAPER</span><span class="t">Flare Data Connector（XRP入金の証明）</span><span class="arr">↗</span></a>
+<a href="https://github.com/flare-foundation/fassets" rel="noopener" target="_blank"><span class="k">GITHUB</span><span class="t">fassets</span><span class="arr">↗</span></a>
+</div>
+</div>
+</div>
+</section>
+<!-- SMART ACCOUNTS -->
+<section class="tool" id="smart">
+<div class="wrap">
+<div class="sec-head">
+<div>
+<div class="sec-num">05 / Smart Accounts</div>
+<h2 data-i18n="t61">Smart Accountsチェッカー</h2>
+<p data-i18n="t62">XRPLのアドレス（rから始まるやつ）を入れたら、そのアドレスにひもづくFlare上のアカウントと中身が分かる。FLRを持ってへんXRPユーザーでも、XRPの送金だけでFlareを使える仕組みや。</p>
+</div>
+</div>
+<div class="card">
+<label class="lbl" data-i18n="t63" for="xrplAddr">XRPLのアドレス（r…）</label>
+<div class="row" style="margin-top:0">
+<div class="grow"><input autocomplete="off" id="xrplAddr" placeholder="rXXXXXXXXXXXXXXXXXXXXXXXXXXXX" spellcheck="false" type="text"/></div>
+<button class="btn" data-i18n="t64" id="saBtn">チェックする</button>
+</div>
+<div class="note" data-i18n="t65">シードや秘密鍵（sから始まるやつ）は絶対に入れたらあかんで。公開アドレスだけで調べられる。</div>
+<div class="err-msg" hidden="" id="saErr"></div>
+<div hidden="" id="saResult">
+<dl class="kv" id="saInfo"></dl>
+<div class="stats">
+<div class="stat"><div class="k">FXRP</div><div class="v" id="saFxrp">—</div></div>
+<div class="stat"><div class="k">stXRP（Firelight）</div><div class="v" id="saSt">—</div></div>
+<div class="stat"><div class="k">FLR ／ WFLR</div><div class="v" id="saFlr">—</div></div>
+</div>
+</div>
+</div>
+<div class="explain">
+<div class="card">
+<h3 data-i18n="t66"><span class="tag">使っている機能</span>Flare Smart Accounts</h3>
+<p data-i18n="t67">XRPLのアドレスごとに、Flare上に専用の「パーソナルアカウント」が1つ決まっとる。XRPLで決まった宛先にメモ付きの送金をすると、FDCがその送金を証明して、パーソナルアカウントが中身の指示（FXRPのミントや送金、Firelightへの預け入れなど）を実行してくれるんや。アドレスは最初の指示より前から計算で決まっとるから、まだ使ってへんアドレスでも表示できるで。</p>
+<ul>
+<li data-i18n="t68">アカウントの住所：<code>MasterAccountController.getPersonalAccount(string xrplOwner)</code></li>
+<li data-i18n="t69">使い始めたかどうか：そのアドレスにコントラクトのコードがあるか（<code>eth_getCode</code>）</li>
+<li data-i18n="t70">残高：FXRP、stXRP（Firelightのボールト）、FLR、WFLRの <code>balanceOf</code></li>
+<li data-i18n="t71">コントラクト：<a href="#" id="macAddr" rel="noopener" target="_blank">取得中…</a></li>
+</ul>
+</div>
+<div class="links" data-i18n="t72">
+<a href="https://dev.flare.network/smart-accounts/overview" rel="noopener" target="_blank"><span class="k">DOCS</span><span class="t">Smart Accountsの概要（Developer Hub）</span><span class="arr">↗</span></a>
+<a href="https://dev.flare.network/smart-accounts/reference/IMasterAccountController" rel="noopener" target="_blank"><span class="k">DOCS</span><span class="t">IMasterAccountController リファレンス</span><span class="arr">↗</span></a>
+<a href="https://dev.flare.network/pdf/whitepapers/20240224-FlareDataConnector.pdf" rel="noopener" target="_blank"><span class="k">WHITEPAPER</span><span class="t">Flare Data Connector（XRPL送金の証明）</span><span class="arr">↗</span></a>
+<a href="https://github.com/flare-foundation/flare-smart-accounts" rel="noopener" target="_blank"><span class="k">GITHUB</span><span class="t">flare-smart-accounts</span><span class="arr">↗</span></a>
+</div>
+</div>
+</div>
+</section>
+<!-- LOTTERY -->
+<section class="tool" id="lottery">
+<div class="wrap">
+<div class="sec-head">
+<div>
+<div class="sec-num">06 / Secure Random Number</div>
+<h2 data-i18n="t73">Flare乱数で抽選</h2>
+<p data-i18n="t74">プレゼント企画やミートアップの抽選に。誰にも操作できへんFlareの乱数で当選者を決めて、あとから誰でも結果を検証できるで。</p>
+</div>
+</div>
+<div class="two">
+<div class="card">
+<label class="lbl" data-i18n="t75" for="entrants">参加者（1行に1人）</label>
+<textarea id="entrants" placeholder="@flare_taro
+@xrp_hanako
+@ftso_jiro
+…"></textarea>
+<div class="row">
+<div class="grow">
+<label class="lbl" data-i18n="t76" for="winCount">当選人数</label>
+<input id="winCount" inputmode="numeric" min="1" type="number" value="1"/>
+</div>
+<button class="btn" data-i18n="t77" id="drawBtn">Flareの乱数で抽選する</button>
+</div>
+<div class="note" data-i18n="t78"><span id="entrantCount">0</span>人が参加。重複した名前は1人として数えるで。乱数は約90秒ごとに新しくなるから、同じ90秒の間に引き直しても結果は変わらへん。</div>
+<div class="err-msg" hidden="" id="drawErr"></div>
+</div>
+<div class="card">
+<label class="lbl" data-i18n="t79">抽選結果</label>
+<div id="drawResult"><div class="empty" data-i18n="t80">ここに当選者が出るで</div></div>
+<dl class="kv" hidden="" id="drawProof"></dl>
+<div class="row" hidden="" id="drawActions">
+<button class="btn ghost" data-i18n="t81" id="copyResult">結果をコピー（X投稿用）</button>
+</div>
+</div>
+</div>
+<div class="explain">
+<div class="card">
+<h3 data-i18n="t82"><span class="tag">使っている機能</span>Secure Random Number（セキュア乱数）</h3>
+<p data-i18n="t83">Flareでは、FTSOのデータプロバイダが価格を出すときの「コミット・リビール」の仕組みから、約90秒ごとに256ビットの乱数が生まれる。全員が答えを公開するまで誰にも結果が分からへんから、1人のプロバイダが操作することはできへんのや。</p>
+<ul>
+<li data-i18n="t84">呼んでいる関数：<code>RandomNumberV2.getRandomNumber()</code></li>
+<li data-i18n="t85">コントラクト：<a href="#" id="rngAddr" rel="noopener" target="_blank">取得中…</a></li>
+<li data-i18n="t86"><code>isSecure</code>が<code>false</code>（どこかのプロバイダが答えを公開せんかった回）のときは、抽選せえへん設定にしとる</li>
+<li data-i18n="t87">当選者の決め方：参加者リストから、<code>keccak256(abi.encode(乱数, i)) mod 残り人数</code>番目の人を1人ずつ選ぶ。乱数と参加者リストがあれば、誰でも同じ結果を再現できる</li>
+</ul>
+</div>
+<div class="links" data-i18n="t88">
+<a href="https://dev.flare.network/network/guides/secure-random-numbers" rel="noopener" target="_blank"><span class="k">DOCS</span><span class="t">Secure Random Numbers（Developer Hub）</span><span class="arr">↗</span></a>
+<a href="https://dev.flare.network/pdf/whitepapers/20240223-FlareTimeSeriesOracleV2.pdf" rel="noopener" target="_blank"><span class="k">WHITEPAPER</span><span class="t">FTSOv2 ホワイトペーパー（乱数の生成元）</span><span class="arr">↗</span></a>
+<a href="https://github.com/flare-foundation/flare-smart-contracts-v2" rel="noopener" target="_blank"><span class="k">GITHUB</span><span class="t">flare-smart-contracts-v2</span><span class="arr">↗</span></a>
+</div>
+</div>
+</div>
+</section>
+<!-- DELEGATION -->
+<section class="tool" id="delegation">
+<div class="wrap">
+<div class="sec-head">
+<div>
+<div class="sec-num">07 / FTSO Delegation</div>
+<h2 data-i18n="t89">委任チェッカー</h2>
+<p data-i18n="t90">Flareのアドレスを入れたら、残高、委任先、まだ請求してへん報酬が分かる。ウォレットはつながへんから、見るだけで安全や。</p>
+</div>
+</div>
+<div class="card">
+<label class="lbl" data-i18n="t91" for="addr">Flareのアドレス（0x…）</label>
+<div class="row" style="margin-top:0">
+<div class="grow"><input autocomplete="off" id="addr" placeholder="0x1234…abcd" spellcheck="false" type="text"/></div>
+<button class="btn" data-i18n="t64" id="checkBtn">チェックする</button>
+</div>
+<div class="note" data-i18n="t92">秘密鍵やシードフレーズは絶対に入れたらあかんで。このページが使うのは公開アドレスだけや。</div>
+<div class="err-msg" hidden="" id="checkErr"></div>
+<div hidden="" id="checkResult">
+<div class="stats">
+<div class="stat"><div class="k" data-i18n="t93">FLR残高</div><div class="v" id="balFlr">—</div></div>
+<div class="stat"><div class="k" data-i18n="t94">WFLR残高（委任に使える分）</div><div class="v" id="balWflr">—</div></div>
+<div class="stat"><div class="k" data-i18n="t95">未請求の報酬（合計）</div><div class="v" id="rewards">—</div></div>
+</div>
+<div class="sub-h" data-i18n="t96">いまの委任先</div>
+<div class="tbl-wrap"><table>
+<thead><tr><th data-i18n="t97">プロバイダ</th><th class="num" data-i18n="t98">委任の割合</th><th class="num" data-i18n="t99">手数料</th></tr></thead>
+<tbody id="delegTable"></tbody>
+</table></div>
+<div class="note" id="rewardNote"></div>
+</div>
+</div>
+<div class="card" style="margin-top:16px">
+<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap">
+<div>
+<div class="sub-h" data-i18n="t100" style="margin-top:0">FTSOプロバイダ一覧</div>
+<div class="note" data-i18n="t101" style="margin-top:0">委任のシェア順。<span id="provAsOf"></span>時点のデータ</div>
+</div>
+<input class="search" data-i18n-placeholder="a2" id="provSearch" placeholder="名前で検索" type="text"/>
+</div>
+<div class="tbl-wrap"><table>
+<thead><tr><th>#</th><th data-i18n="t97">プロバイダ</th><th class="num" data-i18n="t102">委任シェア</th><th class="num" data-i18n="t99">手数料</th></tr></thead>
+<tbody id="provTable"></tbody>
+</table></div>
+<div class="row" style="justify-content:center"><button class="btn ghost" data-i18n="t103" id="provMore">もっと見る</button></div>
+</div>
+<div class="explain">
+<div class="card">
+<h3 data-i18n="t104"><span class="tag">使っている機能</span>WNat（WFLR）と RewardManager</h3>
+<p data-i18n="t105">FLRは「WFLR」にラップすると、FTSOのデータプロバイダに委任できる。委任したWFLRはプロバイダの投票力になって、プロバイダの成績に応じた報酬が委任した人にも配られるんや（WFLRは自分のウォレットから動かへん）。</p>
+<ul>
+<li data-i18n="t106">残高：<code>eth_getBalance</code> と <code>WNat.balanceOf(address)</code></li>
+<li data-i18n="t107">委任先：<code>WNat.delegatesOf(address)</code>（割合はbips、10000＝100%）</li>
+<li data-i18n="t108">未請求の報酬：<code>RewardManager.getStateOfRewards(address)</code>。報酬はだいたい25エポック（約3か月）で期限切れになるで</li>
+<li data-i18n="t109">コントラクト：<a href="#" id="wnatAddr" rel="noopener" target="_blank">WNat</a> / <a href="#" id="rmAddr" rel="noopener" target="_blank">RewardManager</a></li>
+<li data-i18n="t110">プロバイダの名前はチェーン上にはないから、ウォレットが使うコミュニティのリストから載せとる</li>
+</ul>
+</div>
+<div class="links" data-i18n="t111">
+<a href="https://dev.flare.network/network/flare-tx-sdk/cookbook#delegate-to-ftso-providers" rel="noopener" target="_blank"><span class="k">DOCS</span><span class="t">FTSOプロバイダへの委任（Developer Hub）</span><span class="arr">↗</span></a>
+<a href="https://dev.flare.network/pdf/whitepapers/20221231-TheFlareNetworkAndFLRToken.pdf" rel="noopener" target="_blank"><span class="k">WHITEPAPER</span><span class="t">The Flare Network and FLR Token</span><span class="arr">↗</span></a>
+<a href="https://github.com/flare-foundation/flare-smart-contracts-v2" rel="noopener" target="_blank"><span class="k">GITHUB</span><span class="t">flare-smart-contracts-v2</span><span class="arr">↗</span></a>
+<a href="https://github.com/TowoLabs/ftso-signal-providers" rel="noopener" target="_blank"><span class="k">GITHUB</span><span class="t">プロバイダ名のリスト（ftso-signal-providers）</span><span class="arr">↗</span></a>
+</div>
+</div>
+</div>
+</section>
+<!-- NETWORK -->
+<section class="tool" id="network">
+<div class="wrap">
+<div class="sec-head">
+<div>
+<div class="sec-num">08 / Network</div>
+<h2 data-i18n="t112">ネットワークの状態</h2>
+<p data-i18n="t113">Flareのチェーンがいまどう動いとるかを一覧にした。数字は数秒ごとに自動で更新されるで。</p>
+</div>
+<div class="updated" id="netTime">—</div>
+</div>
+<div class="stats net-stats" style="margin-top:0">
+<div class="stat"><div class="k" data-i18n="t114">最新ブロック</div><div class="v" id="nsBlock">—</div></div>
+<div class="stat"><div class="k" data-i18n="t115">平均ブロック時間（直近20ブロック）</div><div class="v" id="nsBt">—</div></div>
+<div class="stat"><div class="k" data-i18n="t116">基本ガス代</div><div class="v" id="nsGas">—</div></div>
+<div class="stat"><div class="k" data-i18n="t117">FLR送金1回の手数料（目安）</div><div class="v" id="nsTx">—</div></div>
+<div class="stat"><div class="k" data-i18n="t118">投票ラウンド（90秒ごと）</div><div class="v" id="nsVr">—</div></div>
+<div class="stat"><div class="k" data-i18n="t119">報酬エポック（約3.5日ごと）</div><div class="v" id="nsRe">—</div></div>
+</div>
+<div class="explain">
+<div class="card">
+<h3 data-i18n="t120"><span class="tag">使っている機能</span>Flareのコンセンサスと Flare Systems Protocol</h3>
+<p data-i18n="t121">Flareのブロックは、Avalanche由来の「Snowman++」っていう合意の仕組みで作られて、1秒ちょっとで確定する。その上で「Flare Systems Protocol（FSP）」が時間を区切っとって、90秒ごとの「投票ラウンド」でFTSOのアンカー価格やFDCの証明、乱数が決まる。約3.5日ごとの「報酬エポック」の区切りで、プロバイダの顔ぶれや委任の重みが更新されて、報酬が計算されるんや。</p>
+<ul>
+<li data-i18n="t122">ブロック・ガス代：<code>eth_getBlockByNumber</code>（<code>baseFeePerGas</code>）</li>
+<li data-i18n="t123">送金手数料の目安：21,000ガス × 基本ガス代（ドルはFTSOのFLR価格で換算）</li>
+<li data-i18n="t124">ラウンドとエポック：<code>FlareSystemsManager.getCurrentVotingEpochId()</code>、<code>getCurrentRewardEpochId()</code>、<code>currentRewardEpochExpectedEndTs()</code></li>
+<li data-i18n="t125">コントラクト：<a href="#" id="fsmAddr" rel="noopener" target="_blank">取得中…</a></li>
+</ul>
+</div>
+<div class="links" data-i18n="t126">
+<a href="https://dev.flare.network/network/overview" rel="noopener" target="_blank"><span class="k">DOCS</span><span class="t">Flareネットワークの概要</span><span class="arr">↗</span></a>
+<a href="https://dev.flare.network/network/fsp/weights-and-signing" rel="noopener" target="_blank"><span class="k">DOCS</span><span class="t">投票ラウンドと報酬エポック（FSP）</span><span class="arr">↗</span></a>
+<a href="https://dev.flare.network/pdf/whitepapers/20221231-TheFlareNetworkAndFLRToken.pdf" rel="noopener" target="_blank"><span class="k">WHITEPAPER</span><span class="t">The Flare Network and FLR Token</span><span class="arr">↗</span></a>
+<a href="https://github.com/flare-foundation/go-flare" rel="noopener" target="_blank"><span class="k">GITHUB</span><span class="t">go-flare（ノードのソフト）</span><span class="arr">↗</span></a>
+</div>
+</div>
+</div>
+</section>
+<!-- MCP -->
+<section class="tool" id="mcp">
+<div class="wrap">
+<div class="sec-head">
+<div>
+<div class="sec-num">09 / Flare MCP Server</div>
+<h2 data-i18n="t127">AIにFlareをつなぐ</h2>
+<p data-i18n="t128">Flare公式の「MCPサーバー」をAIに追加したら、話しかけるだけでFlareのチェーンを調べてもらえる。設定はURLを1つ入れるだけ、APIキーもいらんで。</p>
+</div>
+</div>
+<div class="two">
+<div class="card">
+<label class="lbl" data-i18n="t129">追加するURL</label>
+<div class="row" style="margin-top:0;align-items:center">
+<div class="grow"><code class="mono" style="font-size:clamp(13px,3.6vw,16px);padding:10px 12px;display:block;word-break:keep-all;white-space:nowrap;overflow-x:auto">https://mcp.flare.network</code></div>
+<button class="btn ghost" data-i18n="t130" id="copyMcp">コピー</button>
+</div>
+<div class="sub-h" data-i18n="t131">つないだら、こんなふうに聞いてみてな</div>
+<ul class="plist">
+<li data-i18n="t132">FLR/USDの今の価格は？</li>
+<li data-i18n="t133">このアドレスの委任状況と未請求の報酬を見て 0x…</li>
+<li data-i18n="t134">FXRPの今の発行量とエージェントの数は？</li>
+<li data-i18n="t135">このトランザクションが失敗した理由を教えて 0x…</li>
+<li data-i18n="t136">今投票中のFIPを日本語でまとめて</li>
+</ul>
+</div>
+<div class="card">
+<h3 data-i18n="t137" style="margin:0 0 8px;font-size:16px">できること・できへんこと</h3>
+<ul style="color:var(--sub);font-size:14px;padding-left:18px;margin:0">
+<li data-i18n="t138"><b style="color:var(--text)">できる</b>：FTSOの価格、FDC、FAssets（FXRP）、Smart Accounts、委任と報酬、ガバナンス提案、トランザクションの中身、公式ドキュメントの検索</li>
+<li data-i18n="t139"><b style="color:var(--text)">できへん</b>：署名と送信。MCPサーバーは読み取り専用で、取引は「未署名のトランザクション」を作るところまでや。実行するときは、中身をよう確認してから自分のウォレットでやってな</li>
+<li data-i18n="t140"><b style="color:var(--text)">注意</b>：秘密鍵やシードフレーズは、AIにも絶対に教えたらあかん。AIの答えが間違うこともあるから、大事なことは公式の情報でも確かめてな</li>
+</ul>
+</div>
+</div>
+<div class="sub-h" data-i18n="t141" style="margin-top:28px">AIごとの追加方法 <span class="note" style="font-weight:400">（2026年11月時点。画面の名前は変わることがあるで）</span></div>
+<div class="guides">
+<details class="card guide" open="">
+<summary data-i18n="t142"><span class="gname">Claude</span><span class="gtag">Web・アプリ</span></summary>
+<ol>
+<li data-i18n="t143">ブラウザで <b>claude.ai</b> を開いて、<b>設定 → コネクタ</b> に進む</li>
+<li data-i18n="t144">「コネクタ」の横の <b>＋</b> を押して、<b>カスタムコネクタを追加</b> を選ぶ</li>
+<li data-i18n="t145">名前に <code>Flare</code>、URLに <code>https://mcp.flare.network</code> を入れて <b>追加</b></li>
+<li data-i18n="t146">Webで追加したら、iPhoneやAndroidのClaudeアプリでも使えるようになる</li>
+</ol>
+<p class="note" data-i18n="t147">無料プランはカスタムコネクタが1つまで。スマホのアプリから直接追加する機能はまだベータ版やから、Webでやるのが確実や。</p>
+<a class="glink" data-i18n="t148" href="https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp" rel="noopener" target="_blank">Claude公式ヘルプ ↗</a>
+</details>
+<details class="card guide">
+<summary><span class="gname">ChatGPT</span><span class="gtag">Web</span></summary>
+<ol>
+<li data-i18n="t149">ブラウザで <b>chatgpt.com/plugins</b> を開く</li>
+<li data-i18n="t150"><b>＋</b> を押して、<b>Add custom MCP server</b> を選ぶ</li>
+<li data-i18n="t151">名前に <code>Flare</code>、Server URLに <code>https://mcp.flare.network</code> を入れる。認証は <b>No authentication</b> を選ぶ</li>
+<li data-i18n="t152">注意書きを読んで <b>I understand and want to continue</b>、つぎに <b>Create as a plugin</b> を押す</li>
+<li data-i18n="t153">プラグインをインストールしたら、チャット欄で <b>@</b> を打って Flare を選んで質問する</li>
+</ol>
+<p class="note" data-i18n="t154">追加はWeb版から。プランや時期によって画面が違うことがあって、少し前までは「設定 → コネクタ → 詳細設定 → 開発者モード」から追加する形やった。有料プランが必要な場合もあるで。</p>
+<a class="glink" data-i18n="t155" href="https://developers.openai.com/api/docs/guides/custom-mcp-server" rel="noopener" target="_blank">OpenAI公式ガイド ↗</a>
+</details>
+<details class="card guide">
+<summary><span class="gname">Gemini</span><span class="gtag">Web</span></summary>
+<ol>
+<li data-i18n="t156">ブラウザで <b>gemini.google.com</b> を開いて、<b>設定 → Connected Apps</b> に進む</li>
+<li data-i18n="t157"><b>Custom apps</b> の <b>Add a custom app</b> を選ぶ</li>
+<li data-i18n="t158">URLに <code>https://mcp.flare.network</code> を貼って <b>Next</b>、そのあと接続を承認する</li>
+<li data-i18n="t159">追加したら、スマホのGeminiアプリにも表示される</li>
+</ol>
+<p class="note" data-i18n="t160">カスタムアプリの追加はWeb版だけで、いまは英語表示のときだけ出ることがある。プランや国によっては、まだ使えへん場合もあるで。</p>
+</details>
+<details class="card guide">
+<summary data-i18n="t161"><span class="gname">Muse（Meta）</span><span class="gtag">チャットで頼む</span></summary>
+<ol>
+<li data-i18n="t162">Museには「MCPサーバーを追加する」設定画面がないから、チャットで頼む形になる</li>
+<li data-i18n="t163">新しいチャットで、たとえばこう送る：<br/><code>https://mcp.flare.network のMCPサーバーに、カスタムコネクタでつないでほしい。認証は不要です。</code></li>
+<li data-i18n="t164">Museが接続を作ってくれるから、出てきたカードの <b>Connect</b> を押す</li>
+<li data-i18n="t165">つながったら、そのまま質問してな</li>
+</ol>
+<p class="note" data-i18n="t166">Museは自分で接続用のプログラムを書いてつなぐ仕組みや。うまくいかへんときは、「streamable HTTPのMCPサーバーです」と付け足してみてな。</p>
+</details>
+</div>
+<div class="explain">
+<div class="card">
+<h3 data-i18n="t167"><span class="tag">使っている機能</span>Flare MCP Server</h3>
+<p data-i18n="t168">MCP（Model Context Protocol）は、AIが外部のデータや道具を使うための共通ルールや。Flareが公式に用意したMCPサーバーを通すと、AIがFlareのコントラクトを直接読んだり、Developer Hubのドキュメントを調べたりできる。どのAIでも、同じURLを1つ入れるだけでつながるのがええところや。</p>
+</div>
+<div class="links" data-i18n="t169">
+<a href="https://dev.flare.network/network/guides/flare-mcp-server" rel="noopener" target="_blank"><span class="k">DOCS</span><span class="t">Flare MCP Server ガイド（Developer Hub）</span><span class="arr">↗</span></a>
+<a href="https://modelcontextprotocol.io" rel="noopener" target="_blank"><span class="k">DOCS</span><span class="t">Model Context Protocol とは</span><span class="arr">↗</span></a>
+</div>
+</div>
+</div>
+</section>
+<!-- ABOUT -->
+<section class="tool" id="about">
+<div class="wrap">
+<div class="sec-head">
+<div>
+<div class="sec-num">ABOUT</div>
+<h2 data-i18n="t170">このサイトのしくみ</h2>
+</div>
+</div>
+<div class="two">
+<div class="card">
+<h3 data-i18n="t171" style="margin-top:0;font-size:16px">サーバーなし、ウォレットなし</h3>
+<p data-i18n="t172" style="color:var(--sub);font-size:14px;margin:0">このページを開いた人のブラウザが、Flareの公開RPC（<code class="mono">flare-api.flare.network</code>）に直接問い合わせとる。チェーンを「読む」だけやから、ガス代もFLRもいらへん。コントラクトのアドレスは、Flare公式の<code class="mono">FlareContractRegistry</code>から毎回取ってくるから、アップグレードがあっても自動で追いつくで。</p>
+</div>
+<div class="links" data-i18n="t173">
+<a href="https://dev.flare.network/network/guides/flare-contracts-registry" rel="noopener" target="_blank"><span class="k">DOCS</span><span class="t">FlareContractRegistry</span><span class="arr">↗</span></a>
+<a href="https://dev.flare.network/support/whitepapers" rel="noopener" target="_blank"><span class="k">WHITEPAPER</span><span class="t">Flareのホワイトペーパー一覧</span><span class="arr">↗</span></a>
+<a href="https://github.com/flare-foundation" rel="noopener" target="_blank"><span class="k">GITHUB</span><span class="t">Flare Foundation（GitHub）</span><span class="arr">↗</span></a>
+<a href="https://dev.flare.network" rel="noopener" target="_blank"><span class="k">DOCS</span><span class="t">Flare Developer Hub</span><span class="arr">↗</span></a>
+</div>
+</div>
+</div>
+</section>
+</main>
+<a class="totop" id="toTop" href="#tools" data-i18n-aria-label="a3" aria-label="ツール一覧へ戻る">▲</a>
+<div class="sheet" id="chartSheet" hidden>
+<div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="chartTitle">
+<div class="sheet-head">
+<div><div class="chart-title" id="chartTitle"></div><div class="chart-now"><span id="chartNow">—</span> <span class="chart-chg" id="chartChg"></span></div></div>
+<button type="button" class="sheet-x" id="chartClose" aria-label="閉じる">✕</button>
+</div>
+<div class="seg" id="chartRange"><button type="button" data-r="d1" aria-pressed="true"></button><button type="button" data-r="d3" aria-pressed="false"></button></div>
+<div class="chart-body" id="chartBody"></div>
+<div class="chart-feat" id="chartFeat"></div>
+<div class="note" id="chartNote"></div>
+</div>
+</div>
+<footer>
+<div class="wrap cols">
+<div>
+<div class="brand" data-i18n="t174" style="margin-bottom:10px"><span class="mark">太</span>エアドロ太郎のFlareノート</div>
+<p data-i18n="t175" style="margin:0">このサイトはエアドロ太郎が個人で運営する<b>非公式</b>のツール集や。Flare Foundationとは関係あらへん。表示しとる数字はチェーン上のデータそのままで、投資助言やないで。</p>
+</div>
+<div>
+<h4 data-i18n="t176">ツール</h4>
+<ul><li data-i18n="t177"><a href="#prices">ライブ価格ボード</a></li><li data-i18n="t178"><a href="#convert">XRP ⇔ FLR 換算</a></li><li data-i18n="t179"><a href="#proof">価格の「証明」をチェック</a></li><li data-i18n="t180"><a href="#fxrp">FXRPダッシュボード</a></li><li data-i18n="t181"><a href="#smart">Smart Accountsチェッカー</a></li><li data-i18n="t182"><a href="#lottery">Flare乱数で抽選</a></li><li data-i18n="t183"><a href="#delegation">委任チェッカー</a></li><li data-i18n="t184"><a href="#network">ネットワークの状態</a></li><li data-i18n="t185"><a href="#mcp">AIにFlareをつなぐ</a></li></ul>
+</div>
+<div>
+<h4 data-i18n="y2">運営</h4>
+<ul><li data-i18n="y3"><a href="https://x.com/eadorotarou" rel="noopener" target="_blank">X (@eadorotarou)</a><span class="fnote">エアドロ太郎（個人）</span></li><li data-i18n="y4"><a href="https://x.com/flarejapangroup" rel="noopener" target="_blank">X (@flarejapangroup)</a><span class="fnote">Flare Japan Community（コミュニティ運営・非公式）</span></li></ul>
+</div>
+<div>
+<h4 data-i18n="t186">Flare 公式</h4>
+<ul><li><a href="https://flare.network" rel="noopener" target="_blank">flare.network</a></li><li><a href="https://dev.flare.network" rel="noopener" target="_blank">Developer Hub</a></li><li><a href="https://flare-explorer.flare.network" rel="noopener" target="_blank">Flare Explorer</a></li><li><a href="https://twitter.com/FlareNetworks" rel="noopener" target="_blank">X (@FlareNetworks)</a></li><li><a href="https://www.youtube.com/@Flare_Networks" rel="noopener" target="_blank">YouTube</a></li><li><a href="https://github.com/flare-foundation" rel="noopener" target="_blank">GitHub</a></li></ul>
+</div>
+</div>
+</footer>
+<script src="ethers.umd.min.js"></script>
+<script src="providers.js"></script>
+<script src="i18n-en.js"></script>
+<script src="i18n-ko.js"></script>
+<script src="i18n.js"></script>
+<script>
+(() => {
+  const { ethers } = window;
+  // ---------- messages (ja / en / ko) ----------
+  const MSG = {
+    ja: {
+      locale: "ja-JP",
+      featTag: "使っている機能", featHow: "を、過去のブロック番号を指定して呼び出し",
+      tapHint: "通貨をタップすると、チャートが出るで。",
+      close: "閉じる", range24h: "24時間", range3d: "3日間",
+      chartLoading: "過去の価格をチェーンから読み込み中…",
+      chartFail: "過去の価格を読み込めへんかったわ。少し待ってもう一回開いてな。",
+      chartFailLong: "3日前までの価格は、いまの公開RPCから読めへんかったわ。24時間で見てな。",
+      chartNote: (h) => `FTSOv2の価格を、${h}時間ごとに過去のブロックから読み出して描いとる（右端はライブで更新）。取引所やなくて、Flareのオラクルの価格や。`,
+      since: (p) => "開いてから " + p,
+      ftsoUpd: (t) => "FTSO更新 " + t,
+      updated: (t) => "更新 " + t,
+      netOk: "Flareに接続中", netErr: "接続エラー（再試行中）", netConnecting: "接続中…",
+      drawNeed1: "参加者を1人以上入れてな。", drawK1: "当選人数は1以上にしてな。",
+      drawTooMany: (k, n) => `当選人数（${k}人）が参加者（${n}人）より多いで。`,
+      drawFetching: "乱数を取得中…", drawBtn: "Flareの乱数で抽選する",
+      dtRand: "乱数", dtSafe: "安全性", dtTime: "乱数の時刻", dtBlock: "読み取りブロック", dtCount: "参加者数", people: (n) => `${n}人`,
+      drawInsecure: "今回の乱数は「安全」の判定が出えへんかったから、抽選を止めたで。90秒ほど待ってもう一回押してな。",
+      drawCopy: (list, n, r, t) => `【抽選結果】Flareのセキュア乱数で抽選しました🔥\n\n${list}\n\n参加者：${n}人\n乱数：${r}\n時刻：${t}`,
+      drawFail: "乱数の取得に失敗したわ。少し待ってもう一回試してな。",
+      copied: "コピーしたで ✓", copyFail: "コピーできへんかった", copyResult: "結果をコピー（X投稿用）", copy: "コピー",
+      addrBad: "アドレスの形がおかしいで。0xから始まる42文字を入れてな。",
+      checking: "確認中…", check: "チェックする",
+      rewardsSome: (n) => `未請求の報酬が${n}エポック分あるで。請求は<a href="https://portal.flare.network" target="_blank" rel="noopener">Flare Portal</a>などのウォレットからやってな（このページからは請求できへん）。`,
+      rewardsNone: "いま請求できる報酬はないみたいや。", rewardsFail: "取得できへんかった",
+      notDelegated: (hasW) => "まだどこにも委任してへんみたいや。" + (hasW ? "WFLRはあるから、ウォレットから委任したら報酬がもらえるで。" : "まずはFLRをWFLRにラップするところからやな。"),
+      readFail: "チェーンの読み取りに失敗したわ。少し待ってもう一回試してな。",
+      notFound: "見つからへんかった",
+      usd: "米ドル",
+      loadingPrices: "価格を読み込み中…",
+      convRate: (f, t, r, expr) => `1 ${f} ＝ ${r} ${t}（FTSOの ${expr} から計算）`,
+      proofFetching: "証明を取得中…", proofVerifying: "チェーンで検証中…", proofBtn: "証明を取ってきて検証する",
+      proofDaFail: 'FlareのDA Layer（証明データの公開サーバー）につながらへんかったわ。少し待ってもう一回試してな。仕組みは<a href="https://dev.flare.network/ftso/scaling/getting-started" target="_blank" rel="noopener">公式ドキュメント</a>に載っとるで。',
+      proofOk: "✓ 本物と確認", proofNg: "✗ 確認できず", proofLen: (n) => `${n}個`,
+      proofNote: (r) => `投票ラウンド ${r} のアンカー価格や。「証明の長さ」は、Merkleルートまでたどるのに使ったハッシュの数やで。`,
+      proofFail: "検証の途中で失敗したわ。少し待ってもう一回試してな。",
+      agentStatus: ["通常", "清算中", "全額清算", "退出中", "破棄"],
+      agentNone: "いまミントを受け付けとるエージェントはおらへん",
+      fxNote: (lot, imm) => `1ロット＝${lot} XRP。「空きロット」は、そのエージェントがあと何ロット分ミントを引き受けられるかや。コアボールトの${imm} XRPは、今すぐリデンプション（XRPに戻す）に使える分やで。`,
+      seedWarn: "それはシード（秘密鍵）やないか？絶対に人に見せたらあかん。rから始まる公開アドレスを入れてな。",
+      xrplBad: "XRPLのアドレスの形やないみたいや。rから始まる25〜35文字を入れてな。",
+      dtXrpl: "XRPLアドレス", dtFlareAcct: "Flareのアカウント", dtState: "状態",
+      saUsed: "使用中（作成済み）", saUnused: "まだ使ってへん", saUnusedNote: "最初の指示を送ったら、このアドレスに作られるで",
+      sec: "秒", reLeft: (h, m) => `あと約${h}時間${m}分で次へ`,
+      asOf: "2026年11月23日（報酬エポック452）",
+    },
+    en: {
+      locale: "en-US",
+      featTag: "Flare feature", featHow: "called at past block numbers",
+      tapHint: "Tap a coin to see its chart.",
+      close: "Close", range24h: "24h", range3d: "3 days",
+      chartLoading: "Loading past prices from the chain…",
+      chartFail: "Couldn't load past prices. Please wait a moment and open it again.",
+      chartFailLong: "Prices from 3 days ago couldn't be read from the public RPC right now. Please use 24h.",
+      chartNote: (h) => `Drawn from FTSOv2 prices read from past blocks every ${h} hour(s) (the right edge updates live). These are Flare oracle prices, not exchange prices.`,
+      since: (p) => "Since opened " + p,
+      ftsoUpd: (t) => "FTSO updated " + t,
+      updated: (t) => "Updated " + t,
+      netOk: "Connected to Flare", netErr: "Connection error (retrying)", netConnecting: "Connecting…",
+      drawNeed1: "Please enter at least one entrant.", drawK1: "The number of winners must be 1 or more.",
+      drawTooMany: (k, n) => `There are more winners (${k}) than entrants (${n}).`,
+      drawFetching: "Fetching random number…", drawBtn: "Draw with Flare randomness",
+      dtRand: "Random number", dtSafe: "Security", dtTime: "Random number time", dtBlock: "Block read", dtCount: "Entrants", people: (n) => `${n}`,
+      drawInsecure: "This round's random number was not marked secure, so the draw was stopped. Please wait about 90 seconds and try again.",
+      drawCopy: (list, n, r, t) => `[Raffle result] Drawn with Flare's secure random number 🔥\n\n${list}\n\nEntrants: ${n}\nRandom number: ${r}\nTime: ${t}`,
+      drawFail: "Couldn't fetch the random number. Please wait a moment and try again.",
+      copied: "Copied ✓", copyFail: "Couldn't copy", copyResult: "Copy result (for X)", copy: "Copy",
+      addrBad: "That doesn't look like an address. Enter 42 characters starting with 0x.",
+      checking: "Checking…", check: "Check",
+      rewardsSome: (n) => `You have unclaimed rewards from ${n} epoch(s). Claim them from a wallet such as <a href="https://portal.flare.network" target="_blank" rel="noopener">Flare Portal</a> (this page can't claim).`,
+      rewardsNone: "There are no rewards to claim right now.", rewardsFail: "Couldn't load",
+      notDelegated: (hasW) => "Not delegated to anyone yet. " + (hasW ? "You have WFLR, so delegating from your wallet will earn rewards." : "Start by wrapping FLR into WFLR."),
+      readFail: "Couldn't read the chain. Please wait a moment and try again.",
+      notFound: "No matches",
+      usd: "US dollar",
+      loadingPrices: "Loading prices…",
+      convRate: (f, t, r, expr) => `1 ${f} = ${r} ${t} (calculated from FTSO ${expr})`,
+      proofFetching: "Fetching proofs…", proofVerifying: "Verifying on-chain…", proofBtn: "Fetch proofs and verify",
+      proofDaFail: 'Couldn\'t reach Flare\'s DA Layer (the server that publishes proofs). Please wait a moment and try again. See the <a href="https://dev.flare.network/ftso/scaling/getting-started" target="_blank" rel="noopener">official docs</a> for how it works.',
+      proofOk: "✓ Verified", proofNg: "✗ Not verified", proofLen: (n) => `${n}`,
+      proofNote: (r) => `Anchor prices from voting round ${r}. "Proof length" is the number of hashes used to reach the Merkle root.`,
+      proofFail: "Verification failed midway. Please wait a moment and try again.",
+      agentStatus: ["Normal", "Liquidating", "Full liquidation", "Exiting", "Destroyed"],
+      agentNone: "No agents are accepting mints right now",
+      fxNote: (lot, imm) => `1 lot = ${lot} XRP. "Free lots" is how many more lots that agent can mint. ${imm} XRP of the Core Vault can be used for redemptions (back to XRP) right away.`,
+      seedWarn: "That looks like a seed (secret key)! Never show it to anyone. Please enter a public address starting with r.",
+      xrplBad: "That doesn't look like an XRPL address. Enter 25–35 characters starting with r.",
+      dtXrpl: "XRPL address", dtFlareAcct: "Flare account", dtState: "Status",
+      saUsed: "In use (created)", saUnused: "Not used yet", saUnusedNote: "It will be created at this address with the first instruction",
+      sec: "s", reLeft: (h, m) => `next in about ${h}h ${m}m`,
+      asOf: "November 23, 2026 (reward epoch 452)",
+    },
+    ko: {
+      locale: "ko-KR",
+      featTag: "사용하는 기능", featHow: "를 과거 블록 번호를 지정해 호출",
+      tapHint: "코인을 누르면 차트가 나옵니다.",
+      close: "닫기", range24h: "24시간", range3d: "3일",
+      chartLoading: "과거 가격을 체인에서 불러오는 중…",
+      chartFail: "과거 가격을 불러오지 못했습니다. 잠시 후 다시 열어 주세요.",
+      chartFailLong: "3일 전까지의 가격은 지금 공개 RPC에서 읽을 수 없었습니다. 24시간으로 봐 주세요.",
+      chartNote: (h) => `FTSOv2 가격을 ${h}시간마다 과거 블록에서 읽어 그렸습니다(오른쪽 끝은 실시간 갱신). 거래소가 아닌 Flare 오라클의 가격입니다.`,
+      since: (p) => "연 뒤로 " + p,
+      ftsoUpd: (t) => "FTSO 갱신 " + t,
+      updated: (t) => "갱신 " + t,
+      netOk: "Flare에 연결됨", netErr: "연결 오류 (재시도 중)", netConnecting: "연결 중…",
+      drawNeed1: "참가자를 한 명 이상 입력하세요.", drawK1: "당첨 인원은 1 이상이어야 합니다.",
+      drawTooMany: (k, n) => `당첨 인원(${k}명)이 참가자(${n}명)보다 많습니다.`,
+      drawFetching: "난수를 가져오는 중…", drawBtn: "Flare 난수로 추첨하기",
+      dtRand: "난수", dtSafe: "안전성", dtTime: "난수 시각", dtBlock: "조회 블록", dtCount: "참가자 수", people: (n) => `${n}명`,
+      drawInsecure: "이번 난수는 \"안전\" 판정을 받지 못해 추첨을 멈췄습니다. 90초 정도 기다린 뒤 다시 눌러 주세요.",
+      drawCopy: (list, n, r, t) => `【추첨 결과】 Flare의 보안 난수로 추첨했습니다🔥\n\n${list}\n\n참가자: ${n}명\n난수: ${r}\n시각: ${t}`,
+      drawFail: "난수를 가져오지 못했습니다. 잠시 후 다시 시도해 주세요.",
+      copied: "복사했습니다 ✓", copyFail: "복사하지 못했습니다", copyResult: "결과 복사 (X 게시용)", copy: "복사",
+      addrBad: "주소 형식이 올바르지 않습니다. 0x로 시작하는 42자를 입력하세요.",
+      checking: "확인 중…", check: "확인하기",
+      rewardsSome: (n) => `미청구 보상이 ${n}에포크분 있습니다. 청구는 <a href="https://portal.flare.network" target="_blank" rel="noopener">Flare Portal</a> 등의 지갑에서 하세요(이 페이지에서는 청구할 수 없습니다).`,
+      rewardsNone: "지금 청구할 수 있는 보상은 없습니다.", rewardsFail: "불러오지 못했습니다",
+      notDelegated: (hasW) => "아직 아무에게도 위임하지 않았습니다. " + (hasW ? "WFLR이 있으니, 지갑에서 위임하면 보상을 받을 수 있습니다." : "먼저 FLR을 WFLR로 래핑하는 것부터 시작하세요."),
+      readFail: "체인을 읽지 못했습니다. 잠시 후 다시 시도해 주세요.",
+      notFound: "찾을 수 없습니다",
+      usd: "미국 달러",
+      loadingPrices: "가격을 불러오는 중…",
+      convRate: (f, t, r, expr) => `1 ${f} = ${r} ${t} (FTSO의 ${expr}로 계산)`,
+      proofFetching: "증명을 가져오는 중…", proofVerifying: "체인에서 검증 중…", proofBtn: "증명을 가져와 검증하기",
+      proofDaFail: 'Flare의 DA Layer(증명 데이터 공개 서버)에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요. 구조는 <a href="https://dev.flare.network/ftso/scaling/getting-started" target="_blank" rel="noopener">공식 문서</a>에 나와 있습니다.',
+      proofOk: "✓ 진짜로 확인", proofNg: "✗ 확인 실패", proofLen: (n) => `${n}개`,
+      proofNote: (r) => `투표 라운드 ${r}의 앵커 가격입니다. "증명 길이"는 머클 루트까지 거슬러 올라가는 데 쓴 해시의 개수입니다.`,
+      proofFail: "검증 도중 실패했습니다. 잠시 후 다시 시도해 주세요.",
+      agentStatus: ["정상", "청산 중", "전액 청산", "퇴장 중", "폐기"],
+      agentNone: "지금 민팅을 받고 있는 에이전트가 없습니다",
+      fxNote: (lot, imm) => `1랏 = ${lot} XRP. "남은 랏"은 그 에이전트가 앞으로 몇 랏을 더 민팅할 수 있는지를 뜻합니다. 코어 볼트의 ${imm} XRP는 지금 바로 상환(XRP로 되돌리기)에 쓸 수 있는 양입니다.`,
+      seedWarn: "그건 시드(비밀 키) 아닌가요? 절대 남에게 보여 주면 안 됩니다. r로 시작하는 공개 주소를 입력하세요.",
+      xrplBad: "XRPL 주소 형식이 아닙니다. r로 시작하는 25~35자를 입력하세요.",
+      dtXrpl: "XRPL 주소", dtFlareAcct: "Flare 계정", dtState: "상태",
+      saUsed: "사용 중 (생성됨)", saUnused: "아직 사용 안 함", saUnusedNote: "첫 지시를 보내면 이 주소에 만들어집니다",
+      sec: "초", reLeft: (h, m) => `약 ${h}시간 ${m}분 뒤 다음 에포크`,
+      asOf: "2026년 11월 23일 (보상 에포크 452)",
+    },
+  };
+  const M = (k, ...a) => { const L = MSG[(window.FJ_I18N && window.FJ_I18N.lang) || "ja"] || MSG.ja; const v = L[k] != null ? L[k] : MSG.ja[k]; return typeof v === "function" ? v(...a) : v; };
+  const LOC = () => M("locale");
+
+  const RPC = "https://flare-api.flare.network/ext/C/rpc";
+  const REGISTRY = "0xaD67FE66660Fb8dFE9d6b1b4240d8650e30F6019";
+  const EXPLORER = "https://flare-explorer.flare.network/address/";
+  const provider = new ethers.JsonRpcProvider(RPC, 14, { staticNetwork: true });
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+  // ---------- contracts via registry ----------
+  const registry = new ethers.Contract(REGISTRY, ["function getContractAddressByName(string) view returns (address)"], provider);
+  const addrCache = {}, linked = {};
+  async function resolve(name, linkId) {
+    if (!addrCache[name]) addrCache[name] = registry.getContractAddressByName(name);
+    const a = await addrCache[name];
+    if (linkId) { linked[linkId] = name; const el = $(linkId); if (el) { el.textContent = linkId === "wnatAddr" || linkId === "rmAddr" ? name : short(a); el.href = EXPLORER + a; el.title = a; } }
+    return a;
+  }
+  const short = (a) => a.slice(0, 6) + "…" + a.slice(-4);
+
+  // ---------- network status ----------
+  let netState = null;
+  function setNet(ok, key) {
+    netState = [ok, key];
+    $("netDot").className = "dot " + (ok ? "live" : "err");
+    $("netStatus").textContent = M(key);
+  }
+
+  // ---------- 01 prices ----------
+  const FEEDS = [
+    ["FLR", "Flare"], ["XRP", "XRP"], ["BTC", "Bitcoin"], ["ETH", "Ethereum"],
+    ["SGB", "Songbird"], ["SOL", "Solana"], ["DOGE", "Dogecoin"], ["ADA", "Cardano"]
+  ];
+  const feedId = (sym) => {
+    const name = ethers.toUtf8Bytes(sym + "/USD");
+    const out = new Uint8Array(21); out[0] = 1; out.set(name, 1);
+    return ethers.hexlify(out);
+  };
+  const FEED_IDS = FEEDS.map(([s]) => feedId(s));
+  const grid = $("priceGrid");
+  grid.innerHTML = FEEDS.map(([s, n], i) => `
+    <div class="price${s === "FLR" || s === "XRP" ? " hl" : ""}" id="p-${s}" data-sym="${s}" role="button" tabindex="0" aria-label="${s}/USD chart">
+      <div class="sym">${s}/USD <span>${n}<svg class="cico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span></div>
+      <div class="val skeleton">—</div>
+      <div class="chg">${M("since", "—")}</div>
+    </div>`).join("");
+  const first = {}, last = {};
+  const fmtPrice = (v) => {
+    const d = v >= 1000 ? 2 : v >= 1 ? 4 : v >= 0.01 ? 5 : 6;
+    return "$" + v.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+  };
+  let ftso;
+  async function loadPrices() {
+    if (document.hidden) return;
+    try {
+      if (!ftso) {
+        const a = await resolve("FtsoV2", "ftsoAddr");
+        setFtsoLinks(a);
+        ftso = new ethers.Contract(a, ["function getFeedsById(bytes21[]) payable returns (uint256[] values, int8[] decimals, uint64 timestamp)"], provider);
+      }
+      const [values, decimals, ts] = await ftso.getFeedsById.staticCall(FEED_IDS);
+      FEEDS.forEach(([s], i) => {
+        const v = Number(ethers.formatUnits(values[i], Number(decimals[i])));
+        const el = $("p-" + s);
+        el.querySelector(".val").classList.remove("skeleton");
+        el.querySelector(".val").textContent = fmtPrice(v);
+        if (first[s] === undefined) first[s] = v;
+        if (last[s] !== undefined && v !== last[s]) {
+          el.classList.remove("up", "down"); void el.offsetWidth;
+          el.classList.add(v > last[s] ? "up" : "down");
+          setTimeout(() => el.classList.remove("up", "down"), 1200);
+        }
+        last[s] = v;
+        chartAppendLive(s, v);
+        const pct = first[s] ? (v - first[s]) / first[s] * 100 : 0;
+        el.querySelector(".chg").textContent = M("since", (pct >= 0 ? "+" : "") + pct.toFixed(3) + "%");
+      });
+      const t = new Date(Number(ts) * 1000);
+      $("priceTime").textContent = M("ftsoUpd", t.toLocaleTimeString(LOC()));
+      updateConv();
+      setNet(true, "netOk");
+    } catch (e) {
+      console.error(e);
+      setNet(false, "netErr");
+    }
+  }
+  async function loadBlock() {
+    if (document.hidden) return;
+    try { $("blockNo").textContent = (await provider.getBlockNumber()).toLocaleString("en-US"); } catch (e) {}
+  }
+
+  // ---------- 02 lottery ----------
+  const entrantsEl = $("entrants");
+  const parseEntrants = () => [...new Set(entrantsEl.value.split(/\r?\n/).map(s => s.trim()).filter(Boolean))];
+  entrantsEl.addEventListener("input", () => { $("entrantCount").textContent = parseEntrants().length; });
+  let lastResultText = "", lastDraw = null;
+  function renderDraw() {
+    const d = lastDraw; if (!d) return;
+    const when = new Date(d.ts * 1000).toLocaleString(LOC());
+    const proof = $("drawProof");
+    proof.hidden = false;
+    proof.innerHTML = `
+        <dt>${M("dtRand")}</dt><dd class="mono">${d.rand}</dd>
+        <dt>${M("dtSafe")}</dt><dd>${d.isSecure ? '<span class="badge ok">isSecure = true</span>' : '<span class="badge ng">isSecure = false</span>'}</dd>
+        <dt>${M("dtTime")}</dt><dd>${when}<br><span class="note">timestamp ${d.ts}</span></dd>
+        <dt>${M("dtBlock")}</dt><dd>${d.block.toLocaleString("en-US")}</dd>
+        <dt>${M("dtCount")}</dt><dd>${M("people", d.n)}</dd>`;
+    if (!d.winners) {
+      $("drawResult").innerHTML = `<div class="empty">${M("drawInsecure")}</div>`;
+      $("drawActions").hidden = true;
+      return;
+    }
+    $("drawResult").innerHTML = '<ul class="winners">' + d.winners.map((w, i) => `<li><span class="rank">${i + 1}</span>${esc(w)}</li>`).join("") + "</ul>";
+    lastResultText = M("drawCopy", d.winners.map((w, i) => `${i + 1}. ${w}`).join("\n"), d.n, d.rand, when);
+    $("drawActions").hidden = false;
+  }
+  $("drawBtn").addEventListener("click", async () => {
+    const err = $("drawErr"); err.hidden = true;
+    const people = parseEntrants();
+    const k = parseInt($("winCount").value, 10);
+    if (people.length < 1) { err.textContent = M("drawNeed1"); err.hidden = false; return; }
+    if (!(k >= 1)) { err.textContent = M("drawK1"); err.hidden = false; return; }
+    if (k > people.length) { err.textContent = M("drawTooMany", k, people.length); err.hidden = false; return; }
+    const btn = $("drawBtn"); btn.disabled = true; btn.textContent = M("drawFetching");
+    try {
+      const a = await resolve("RandomNumberV2", "rngAddr");
+      const rng = new ethers.Contract(a, ["function getRandomNumber() view returns (uint256 randomNumber, bool isSecure, uint256 timestamp)"], provider);
+      const [rand, isSecure, ts] = await rng.getRandomNumber();
+      const block = await provider.getBlockNumber();
+      let winners = null;
+      if (isSecure) {
+        const pool = people.slice();
+        winners = [];
+        const coder = ethers.AbiCoder.defaultAbiCoder();
+        for (let i = 0; i < k; i++) {
+          const h = BigInt(ethers.keccak256(coder.encode(["uint256", "uint256"], [rand, i])));
+          const idx = Number(h % BigInt(pool.length));
+          winners.push(pool.splice(idx, 1)[0]);
+        }
+      }
+      lastDraw = { rand: rand.toString(), isSecure, ts: Number(ts), block, n: people.length, winners };
+      renderDraw();
+    } catch (e) {
+      console.error(e);
+      err.textContent = M("drawFail"); err.hidden = false;
+    } finally {
+      btn.disabled = false; btn.textContent = M("drawBtn");
+    }
+  });
+  $("copyResult").addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(lastResultText); $("copyResult").textContent = M("copied"); }
+    catch (e) { $("copyResult").textContent = M("copyFail"); }
+    setTimeout(() => { $("copyResult").textContent = M("copyResult"); }, 2000);
+  });
+
+  $("copyMcp").addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText("https://mcp.flare.network"); $("copyMcp").textContent = M("copied"); }
+    catch (e) { $("copyMcp").textContent = M("copyFail"); }
+    setTimeout(() => { $("copyMcp").textContent = M("copy"); }, 2000);
+  });
+
+  // ---------- 03 delegation ----------
+  const PROVIDERS = window.FJC_PROVIDERS || [];
+  const provByAddr = {};
+  PROVIDERS.forEach(p => { provByAddr[p[1].toLowerCase()] = p; });
+  $("provAsOf").textContent = M("asOf");
+  const fmtFlr = (wei, unit = "FLR") => {
+    const v = Number(ethers.formatEther(wei));
+    return v.toLocaleString("en-US", { maximumFractionDigits: v >= 1000 ? 0 : 4 }) + " <small>" + unit + "</small>";
+  };
+  const provName = (p, addr) => p && p[0]
+    ? (p[4] ? `<a href="${esc(p[4])}" target="_blank" rel="noopener">${esc(p[0])}</a>` : esc(p[0]))
+    : `<span class="mono">${short(addr)}</span>`;
+
+  $("checkBtn").addEventListener("click", check);
+  $("addr").addEventListener("keydown", (e) => { if (e.key === "Enter") check(); });
+  async function check() {
+    const err = $("checkErr"); err.hidden = true;
+    const raw = $("addr").value.trim();
+    if (!ethers.isAddress(raw)) { err.textContent = M("addrBad"); err.hidden = false; return; }
+    const addr = ethers.getAddress(raw);
+    const btn = $("checkBtn"); btn.disabled = true; btn.textContent = M("checking");
+    try {
+      const [wnatA, rmA] = await Promise.all([resolve("WNat", "wnatAddr"), resolve("RewardManager", "rmAddr")]);
+      const wnat = new ethers.Contract(wnatA, [
+        "function balanceOf(address) view returns (uint256)",
+        "function delegatesOf(address) view returns (address[] _delegateAddresses, uint256[] _bips, uint256 _count, uint256 _delegationMode)"
+      ], provider);
+      const rm = new ethers.Contract(rmA, [
+        "function getStateOfRewards(address) view returns ((uint24 rewardEpochId, bytes20 beneficiary, uint120 amount, uint8 claimType, bool initialised)[][])"
+      ], provider);
+      const [flr, wflr, deleg, rewardState] = await Promise.all([
+        provider.getBalance(addr), wnat.balanceOf(addr), wnat.delegatesOf(addr),
+        rm.getStateOfRewards(addr).catch(() => null)
+      ]);
+      $("balFlr").innerHTML = fmtFlr(flr);
+      $("balWflr").innerHTML = fmtFlr(wflr, "WFLR");
+      if (rewardState) {
+        let total = 0n, epochs = new Set();
+        for (const ep of rewardState) for (const r of ep) { total += BigInt(r.amount); epochs.add(Number(r.rewardEpochId)); }
+        $("rewards").innerHTML = fmtFlr(total);
+        $("rewardNote").innerHTML = total > 0n
+          ? M("rewardsSome", epochs.size)
+          : M("rewardsNone");
+      } else {
+        $("rewards").textContent = M("rewardsFail");
+        $("rewardNote").textContent = "";
+      }
+      const [addrs, bips] = [deleg[0], deleg[1]];
+      $("delegTable").innerHTML = addrs.length
+        ? addrs.map((a, i) => {
+            const p = provByAddr[a.toLowerCase()];
+            return `<tr><td>${provName(p, a)}</td><td class="num">${(Number(bips[i]) / 100).toFixed(0)}%</td><td class="num">${p ? p[3] + "%" : "—"}</td></tr>`;
+          }).join("")
+        : `<tr><td colspan="3" style="color:var(--mute)">${M("notDelegated", wflr > 0n)}</td></tr>`;
+      $("checkResult").hidden = false;
+    } catch (e) {
+      console.error(e);
+      err.textContent = M("readFail"); err.hidden = false;
+    } finally {
+      btn.disabled = false; btn.textContent = M("check");
+    }
+  }
+
+  // provider table
+  let provShown = 15;
+  const maxShare = Math.max(...PROVIDERS.map(p => p[2]), 1);
+  function renderProv() {
+    const q = $("provSearch").value.trim().toLowerCase();
+    const list = PROVIDERS.filter(p => !q || (p[0] || "").toLowerCase().includes(q) || p[1].toLowerCase().includes(q));
+    const rows = (q ? list : list.slice(0, provShown));
+    $("provTable").innerHTML = rows.map(p => `<tr>
+      <td class="num" style="text-align:left;color:var(--mute)">${PROVIDERS.indexOf(p) + 1}</td>
+      <td>${provName(p, p[1])}<div class="bar"><i style="width:${(p[2] / maxShare * 100).toFixed(1)}%"></i></div></td>
+      <td class="num">${p[2].toFixed(2)}%</td><td class="num">${p[3]}%</td></tr>`).join("") ||
+      `<tr><td colspan="4" style="color:var(--mute)">${M("notFound")}</td></tr>`;
+    $("provMore").hidden = !!q || provShown >= list.length;
+  }
+  $("provSearch").addEventListener("input", renderProv);
+  $("provMore").addEventListener("click", () => { provShown += 30; renderProv(); });
+  renderProv();
+
+  // ---------- convert ----------
+  const CONV_ASSETS = ["XRP","FLR","USD","BTC","ETH","SGB","SOL","DOGE","ADA"];
+  function fillConv() {
+    const f = $("convFrom").value || "XRP", t = $("convTo").value || "FLR";
+    const optHtml = CONV_ASSETS.map(s => `<option value="${s}">${s === "USD" ? M("usd") : s}</option>`).join("");
+    $("convFrom").innerHTML = optHtml; $("convTo").innerHTML = optHtml;
+    $("convFrom").value = f; $("convTo").value = t;
+  }
+  fillConv();
+  const usdOf = (s) => s === "USD" ? 1 : last[s];
+  function fmtAmount(v) {
+    if (!isFinite(v)) return "—";
+    const d = v >= 1000 ? 2 : v >= 1 ? 4 : 8;
+    return v.toLocaleString("en-US", { maximumFractionDigits: d });
+  }
+  function updateConv() {
+    const a = parseFloat($("convAmt").value), f = $("convFrom").value, t = $("convTo").value;
+    const pf = usdOf(f), pt = usdOf(t);
+    if (!pf || !pt) { $("convRate").textContent = M("loadingPrices"); return; }
+    const rate = pf / pt;
+    $("convOut").innerHTML = (isFinite(a) ? fmtAmount(a * rate) : "—") + ` <small>${t}</small>`;
+    const expr = (f === "USD" ? "" : f + "/USD") + (f !== "USD" && t !== "USD" ? " ÷ " : "") + (t === "USD" ? "" : t + "/USD");
+    $("convRate").textContent = M("convRate", f, t, fmtAmount(rate), expr);
+  }
+  ["convAmt", "convFrom", "convTo"].forEach(id => $(id).addEventListener("input", updateConv));
+  $("convSwap").addEventListener("click", () => { const f = $("convFrom").value; $("convFrom").value = $("convTo").value; $("convTo").value = f; updateConv(); });
+
+  // ---------- proof ----------
+  const DA_URL = "https://flr-data-availability.flare.network/api/v0/ftso/anchor-feeds-with-proof";
+  const PROOF_FEEDS = ["FLR", "XRP", "BTC"];
+  let lastProof = null;
+  function renderProof() {
+    const rows = lastProof; if (!rows) return;
+    $("proofTable").innerHTML = rows.map(r => `<tr><td><b>${esc(r.name)}</b></td><td class="num">${fmtPrice(r.price)}</td><td class="num">${r.turnout.toFixed(0)}%</td><td class="num">${M("proofLen", r.plen)}</td>
+        <td>${r.ok ? `<span class="badge ok">${M("proofOk")}</span>` : `<span class="badge ng">${M("proofNg")}</span>`}</td></tr>`).join("");
+    $("proofWrap").hidden = false;
+    const round = rows[0] ? rows[0].round : "—";
+    $("proofNote").textContent = M("proofNote", Number(round).toLocaleString("en-US"));
+  }
+  $("proofBtn").addEventListener("click", async () => {
+    const err = $("proofErr"); err.hidden = true;
+    const btn = $("proofBtn"); btn.disabled = true; btn.textContent = M("proofFetching");
+    try {
+      let data;
+      try {
+        const res = await fetch(DA_URL, { method: "POST", headers: { "Content-Type": "application/json", "accept": "application/json" },
+          body: JSON.stringify({ feed_ids: PROOF_FEEDS.map(feedId) }) });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        data = await res.json();
+      } catch (e) {
+        console.error(e);
+        err.innerHTML = M("proofDaFail");
+        err.hidden = false; return;
+      }
+      const a = await resolve("FtsoV2");
+      const ftsoV = new ethers.Contract(a, ["function verifyFeedData((bytes32[] proof, (uint32 votingRoundId, bytes21 id, int32 value, uint16 turnoutBIPS, int8 decimals) body)) view returns (bool)"], provider);
+      btn.textContent = M("proofVerifying");
+      const rows = await Promise.all(data.map(async (d) => {
+        const b = d.body;
+        let ok = false;
+        try { ok = await ftsoV.verifyFeedData([d.proof, [b.votingRoundId, b.id, b.value, b.turnoutBIPS, b.decimals]]); } catch (e) { console.error(e); }
+        const name = ethers.toUtf8String(ethers.getBytes(b.id).slice(1)).replace(/\0+$/, "");
+        const price = Number(b.value) / Math.pow(10, Number(b.decimals));
+        return { name, price, turnout: b.turnoutBIPS / 100, plen: d.proof.length, ok, round: b.votingRoundId };
+      }));
+      lastProof = rows;
+      renderProof();
+    } catch (e) {
+      console.error(e);
+      err.textContent = M("proofFail"); err.hidden = false;
+    } finally {
+      btn.disabled = false; btn.textContent = M("proofBtn");
+    }
+  });
+
+  // ---------- FXRP ----------
+  const AGENT_NAMES = {
+    "0x8ea74d78a03f20597cee115176f7f8b65271c87a": "Oracle Daemon",
+    "0x7cec6ec27f3a0f0a37b1847e5af3e99a7499a0bc": "Atlas TSO",
+    "0xe56f464c23760d563dd4c73dada05159ae71fc50": "AU",
+    "0x0f6ab40fe44aa3ab15b8ff96df98c6f5865f048e": "NORTSO",
+    "0xa69bf2ec0ef91a29b5da634bd4958aa32bad9fe3": "Bifrost Wallet",
+    "0x09011d2a11a40db855cb00b3aa5a0f5f3bd485fd": "White Knight"
+  };
+  let am, fxrpToken, fxrpDec = 6;
+  const fmtBig = (v, d = 0) => v.toLocaleString("en-US", { maximumFractionDigits: d });
+  async function loadFxrp() {
+    if (document.hidden) return;
+    try {
+      if (!am) {
+        const a = await resolve("AssetManagerFXRP", "amAddr");
+        am = new ethers.Contract(a, [
+          "function fAsset() view returns (address)",
+          "function lotSize() view returns (uint256)",
+          "function coreVaultAvailableAmount() view returns (uint256 _immediatelyAvailableUBA, uint256 _totalAvailableUBA)",
+          "function getAvailableAgentsDetailedList(uint256 _start, uint256 _end) view returns ((address agentVault, address ownerManagementAddress, uint256 feeBIPS, uint256 mintingVaultCollateralRatioBIPS, uint256 mintingPoolCollateralRatioBIPS, uint256 freeCollateralLots, uint8 status)[], uint256 _totalLength)"
+        ], provider);
+        fxrpToken = new ethers.Contract(await am.fAsset(), ["function totalSupply() view returns (uint256)", "function decimals() view returns (uint8)", "function balanceOf(address) view returns (uint256)"], provider);
+        fxrpDec = Number(await fxrpToken.decimals());
+      }
+      const [supply, lot, cv, agents] = await Promise.all([fxrpToken.totalSupply(), am.lotSize(), am.coreVaultAvailableAmount(), am.getAvailableAgentsDetailedList(0, 50)]);
+      const sup = Number(ethers.formatUnits(supply, fxrpDec));
+      const lotX = Number(ethers.formatUnits(lot, fxrpDec));
+      $("fxSupply").innerHTML = fmtBig(sup) + " <small>FXRP</small>";
+      $("fxUsd").innerHTML = last.XRP ? "$" + fmtBig(sup * last.XRP) : "—";
+      $("fxCv").innerHTML = fmtBig(Number(ethers.formatUnits(cv[1], fxrpDec))) + " <small>XRP</small>";
+      const list = agents[0];
+      $("fxAgents").innerHTML = list.length ? list.map(g => {
+        const nm = AGENT_NAMES[g.agentVault.toLowerCase()];
+        const label = nm ? esc(nm) : `<span class="mono">${short(g.agentVault)}</span>`;
+        const st = Number(g.status);
+        return `<tr><td><a href="${EXPLORER}${g.agentVault}" target="_blank" rel="noopener">${label}</a></td>
+          <td class="num">${(Number(g.feeBIPS) / 100).toFixed(2)}%</td>
+          <td class="num">${fmtBig(Number(g.freeCollateralLots))}<div class="note" style="margin:0">≈${fmtBig(Number(g.freeCollateralLots) * lotX)} XRP</div></td>
+          <td class="num">${Number(g.mintingVaultCollateralRatioBIPS) / 100}%／${Number(g.mintingPoolCollateralRatioBIPS) / 100}%</td>
+          <td>${st === 0 ? `<span class="badge ok">${M("agentStatus")[0]}</span>` : `<span class="badge ng">${M("agentStatus")[st] || st}</span>`}</td></tr>`;
+      }).join("") : `<tr><td colspan="5" style="color:var(--mute)">${M("agentNone")}</td></tr>`;
+      $("fxNote").innerHTML = M("fxNote", fmtBig(lotX), fmtBig(Number(ethers.formatUnits(cv[0], fxrpDec))));
+      $("fxrpTime").textContent = M("updated", new Date().toLocaleTimeString(LOC()));
+    } catch (e) { console.error(e); }
+  }
+
+  // ---------- Smart Accounts ----------
+  const STXRP_VAULT = "0x4C18Ff3C89632c3Dd62E796c0aFA5c07c4c1B2b3"; // Firelight stXRP vault registered in MasterAccountController
+  $("saBtn").addEventListener("click", checkSa);
+  $("xrplAddr").addEventListener("keydown", (e) => { if (e.key === "Enter") checkSa(); });
+  async function checkSa() {
+    const err = $("saErr"); err.hidden = true;
+    const x = $("xrplAddr").value.trim();
+    if (/^s[1-9A-HJ-NP-Za-km-z]{20,}$/.test(x)) { err.textContent = M("seedWarn"); err.hidden = false; $("xrplAddr").value = ""; return; }
+    if (!/^r[1-9A-HJ-NP-Za-km-z]{24,34}$/.test(x)) { err.textContent = M("xrplBad"); err.hidden = false; return; }
+    const btn = $("saBtn"); btn.disabled = true; btn.textContent = M("checking");
+    try {
+      const macA = await resolve("MasterAccountController", "macAddr");
+      const mac = new ethers.Contract(macA, ["function getPersonalAccount(string _xrplOwner) view returns (address)"], provider);
+      const pa = await mac.getPersonalAccount(x);
+      if (!fxrpToken) await loadFxrp();
+      const wnatA = await resolve("WNat", "wnatAddr");
+      const erc = (a) => new ethers.Contract(a, ["function balanceOf(address) view returns (uint256)"], provider);
+      const [code, flr, wflr, fx, st] = await Promise.all([
+        provider.getCode(pa), provider.getBalance(pa), erc(wnatA).balanceOf(pa),
+        fxrpToken ? fxrpToken.balanceOf(pa) : 0n, erc(STXRP_VAULT).balanceOf(pa).catch(() => 0n)
+      ]);
+      const deployed = code && code !== "0x";
+      $("saInfo").innerHTML = `
+        <dt>${M("dtXrpl")}</dt><dd class="mono">${esc(x)}</dd>
+        <dt>${M("dtFlareAcct")}</dt><dd><a href="${EXPLORER}${pa}" target="_blank" rel="noopener" class="mono">${pa}</a></dd>
+        <dt>${M("dtState")}</dt><dd>${deployed ? `<span class="badge ok">${M("saUsed")}</span>` : `<span class="badge ng">${M("saUnused")}</span> <span class="note">${M("saUnusedNote")}</span>`}</dd>`;
+      const f6 = (v) => fmtBig(Number(ethers.formatUnits(v, 6)), 4);
+      $("saFxrp").innerHTML = f6(fx) + " <small>FXRP</small>";
+      $("saSt").innerHTML = f6(st) + " <small>stXRP</small>";
+      $("saFlr").innerHTML = fmtBig(Number(ethers.formatEther(flr)), 4) + " <small>FLR</small><br>" + fmtBig(Number(ethers.formatEther(wflr)), 4) + " <small>WFLR</small>";
+      $("saResult").hidden = false;
+    } catch (e) {
+      console.error(e);
+      err.textContent = M("readFail"); err.hidden = false;
+    } finally { btn.disabled = false; btn.textContent = M("check"); }
+  }
+
+  // ---------- network ----------
+  let fsm;
+  async function loadNet() {
+    if (document.hidden) return;
+    try {
+      if (!fsm) {
+        const a = await resolve("FlareSystemsManager", "fsmAddr");
+        fsm = new ethers.Contract(a, ["function getCurrentVotingEpochId() view returns (uint32)", "function getCurrentRewardEpochId() view returns (uint24)", "function currentRewardEpochExpectedEndTs() view returns (uint64)"], provider);
+      }
+      const latest = await provider.getBlock("latest");
+      const [old, vr, re, reEnd] = await Promise.all([provider.getBlock(latest.number - 20), fsm.getCurrentVotingEpochId(), fsm.getCurrentRewardEpochId(), fsm.currentRewardEpochExpectedEndTs()]);
+      const bt = (latest.timestamp - old.timestamp) / 20;
+      const base = latest.baseFeePerGas || 0n;
+      const gwei = Number(ethers.formatUnits(base, "gwei"));
+      const txFlr = Number(ethers.formatEther(base * 21000n));
+      $("nsBlock").innerHTML = latest.number.toLocaleString("en-US");
+      $("blockNo").textContent = latest.number.toLocaleString("en-US");
+      $("nsBt").innerHTML = bt.toFixed(2) + ` <small>${M("sec")}</small>`;
+      $("nsGas").innerHTML = fmtBig(gwei, 1) + " <small>gwei</small>";
+      $("nsTx").innerHTML = fmtBig(txFlr, 4) + " <small>FLR</small>" + (last.FLR ? `<br><small>≈ $${(txFlr * last.FLR).toFixed(5)}</small>` : "");
+      $("nsVr").innerHTML = Number(vr).toLocaleString("en-US");
+      const left = Number(reEnd) - Date.now() / 1000;
+      const h = Math.max(0, Math.floor(left / 3600)), m = Math.max(0, Math.floor((left % 3600) / 60));
+      $("nsRe").innerHTML = Number(re) + ` <small>${M("reLeft", h, m)}</small>`;
+      $("netTime").textContent = M("updated", new Date().toLocaleTimeString(LOC()));
+    } catch (e) { console.error(e); }
+  }
+
+  // ---------- price chart (tap a card) ----------
+  const RANGES = { d1: { hours: 24, step: 1 }, d3: { hours: 72, step: 3 } };
+  const histCache = {};   // range -> Promise<[{t, prices:{SYM:v}}]>
+  let chartSym = null, chartRange = "d1", chartPts = [], liveTail = [];
+  const sheet = $("chartSheet");
+  function openChart(sym) {
+    chartSym = sym; liveTail = [];
+    sheet.hidden = false; document.body.classList.add("noscroll");
+    renderChartFrame(); loadChart();
+  }
+  function closeChart() { sheet.hidden = true; chartSym = null; document.body.classList.remove("noscroll"); }
+  $("chartClose").addEventListener("click", closeChart);
+  sheet.addEventListener("click", (e) => { if (e.target === sheet) closeChart(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !sheet.hidden) closeChart(); });
+  document.querySelectorAll("#chartRange [data-r]").forEach(b => b.addEventListener("click", () => { chartRange = b.dataset.r; liveTail = []; renderChartFrame(); loadChart(); }));
+  grid.addEventListener("click", (e) => { const c = e.target.closest(".price[data-sym]"); if (c) openChart(c.dataset.sym); });
+  grid.addEventListener("keydown", (e) => { const c = e.target.closest(".price[data-sym]"); if (c && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openChart(c.dataset.sym); } });
+
+  window.addEventListener("resize", () => { if (!sheet.hidden && chartPts.length) drawChart(); });
+  async function fetchHistory(range) {
+    const { hours, step } = RANGES[range];
+    if (!ftso) await loadPrices();
+    const latest = await provider.getBlock("latest");
+    const back = await provider.getBlock(latest.number - 20000);
+    const bt = (latest.timestamp - back.timestamp) / 20000;   // 平均ブロック時間
+    const tags = [];
+    for (let h = hours; h >= step; h -= step) tags.push(Math.max(1, latest.number - Math.round(h * 3600 / bt)));
+    const out = [];
+    for (let i = 0; i < tags.length; i += 6) {   // 6件ずつ（公開RPCに優しく）
+      const part = await Promise.all(tags.slice(i, i + 6).map(async (tag) => {
+        try {
+          const [values, decimals, ts] = await ftso.getFeedsById.staticCall(FEED_IDS, { blockTag: tag });
+          const prices = {};
+          FEEDS.forEach(([s], k) => { prices[s] = Number(ethers.formatUnits(values[k], Number(decimals[k]))); });
+          return { t: Number(ts) * 1000, prices };
+        } catch (e) { return null; }
+      }));
+      out.push(...part.filter(Boolean));
+    }
+    if (!out.length) throw new Error("no history");
+    return out;
+  }
+  async function loadChart() {
+    const sym = chartSym, range = chartRange;
+    $("chartBody").innerHTML = `<div class="chart-msg">${M("chartLoading")}</div>`;
+    try {
+      if (!histCache[range]) histCache[range] = fetchHistory(range).catch(e => { delete histCache[range]; throw e; });
+      const hist = await histCache[range];
+      if (sym !== chartSym || range !== chartRange) return;
+      chartPts = hist.map(p => ({ t: p.t, v: p.prices[sym] })).filter(p => p.v > 0);
+      drawChart();
+    } catch (e) {
+      console.error(e);
+      if (sym === chartSym) $("chartBody").innerHTML = `<div class="chart-msg">${M(range === "d1" ? "chartFail" : "chartFailLong")}</div>`;
+    }
+  }
+  function chartAppendLive(sym, v) {
+    if (sheet.hidden || sym !== chartSym || !chartPts.length) return;
+    liveTail.push({ t: Date.now(), v });
+    if (liveTail.length > 600) liveTail.shift();
+    drawChart();
+  }
+  function renderChartFrame() {
+    const name = (FEEDS.find(f => f[0] === chartSym) || [chartSym, ""])[1];
+    $("chartTitle").innerHTML = `${chartSym}/USD <span>${name}</span>`;
+    document.querySelectorAll("#chartRange [data-r]").forEach(b => { b.textContent = M(b.dataset.r === "d1" ? "range24h" : "range3d"); b.setAttribute("aria-pressed", String(b.dataset.r === chartRange)); });
+    $("chartNote").textContent = M("chartNote", RANGES[chartRange].step);
+    $("chartFeat").innerHTML = `<span class="tag">${M("featTag")}</span>FTSOv2 — <code>FtsoV2.getFeedsById(bytes21[])</code> ${M("featHow")}`;
+    $("chartNow").textContent = last[chartSym] ? fmtPrice(last[chartSym]) : "—";
+    $("chartChg").textContent = "";
+  }
+  function drawChart() {
+    const pts = chartPts.concat(liveTail);
+    if (pts.length < 2) return;
+    const W = Math.max(300, Math.round($("chartBody").clientWidth || 640)), H = W < 500 ? 230 : 280, L = 4, R = 70, T = 14, B = 28;
+    const t0 = pts[0].t, t1 = pts[pts.length - 1].t;
+    let lo = Math.min(...pts.map(p => p.v)), hi = Math.max(...pts.map(p => p.v));
+    const pad = (hi - lo) * 0.12 || hi * 0.01; lo -= pad; hi += pad;
+    const x = (t) => L + (t - t0) / (t1 - t0 || 1) * (W - L - R);
+    const y = (v) => T + (hi - v) / (hi - lo) * (H - T - B);
+    const line = pts.map((p, i) => `${i ? "L" : "M"}${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`).join("");
+    const area = line + `L${x(t1).toFixed(1)},${H - B}L${x(t0).toFixed(1)},${H - B}Z`;
+    let ticks = "";
+    for (let i = 0; i <= 3; i++) {
+      const v = lo + (hi - lo) * (i / 3) , yy = y(v);
+      ticks += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" class="g"/><text x="${W - R + 8}" y="${yy + 4}" class="ax">${fmtPrice(v)}</text>`;
+    }
+    const loc = LOC(); const span = t1 - t0; let xt = "";
+    const nx = W < 500 ? 2 : 4;
+    for (let i = 0; i <= nx; i++) {
+      const t = t0 + span * i / nx;
+      const d = new Date(t);
+      const lab = span > 36 * 3600e3 ? d.toLocaleDateString(loc, { month: "numeric", day: "numeric" }) + " " + d.toLocaleTimeString(loc, { hour: "2-digit" }) : d.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" });
+      xt += `<text x="${x(t)}" y="${H - 8}" class="ax" text-anchor="${i === 0 ? "start" : i === nx ? "end" : "middle"}">${lab}</text>`;
+    }
+    const lastP = pts[pts.length - 1];
+    $("chartBody").innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="chart-svg" role="img" aria-label="${chartSym}/USD">
+      <defs><linearGradient id="cg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#FF4D7D" stop-opacity=".28"/><stop offset="1" stop-color="#FF4D7D" stop-opacity="0"/></linearGradient></defs>
+      ${ticks}<path d="${area}" fill="url(#cg)"/><path d="${line}" fill="none" stroke="#FF4D7D" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="${x(lastP.t)}" cy="${y(lastP.v)}" r="4" fill="#FF4D7D" stroke="#16161D" stroke-width="2"/>
+      ${xt}
+      <g id="cx" visibility="hidden"><line id="cxL" y1="${T}" y2="${H - B}" class="cxl"/><circle id="cxD" r="4.5" fill="#FF4D7D" stroke="#16161D" stroke-width="2"/></g>
+      <rect x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent" id="cxHit"/>
+    </svg><div class="chart-tip" id="chartTip" hidden></div>`;
+    const first = pts[0].v, pct = (lastP.v - first) / first * 100;
+    $("chartNow").textContent = fmtPrice(lastP.v);
+    const ch = $("chartChg");
+    ch.textContent = `${pct >= 0 ? "▲" : "▼"} ${Math.abs(pct).toFixed(2)}% · ${M(chartRange === "d1" ? "range24h" : "range3d")}`;
+    ch.className = "chart-chg " + (pct >= 0 ? "up" : "down");
+    // hover / touch crosshair
+    const svg = $("chartBody").querySelector("svg"), hit = $("cxHit"), tip = $("chartTip");
+    const show = (ev) => {
+      const r = svg.getBoundingClientRect(); const cx = (ev.clientX - r.left) / r.width * W;
+      const tt = t0 + (cx - L) / (W - L - R) * (t1 - t0);
+      let best = pts[0]; for (const p of pts) if (Math.abs(p.t - tt) < Math.abs(best.t - tt)) best = p;
+      const px = x(best.t), py = y(best.v);
+      $("cxL").setAttribute("x1", px); $("cxL").setAttribute("x2", px); $("cxD").setAttribute("cx", px); $("cxD").setAttribute("cy", py);
+      $("cx").setAttribute("visibility", "visible");
+      tip.hidden = false;
+      tip.innerHTML = `<b>${fmtPrice(best.v)}</b><span>${new Date(best.t).toLocaleString(loc, { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>`;
+      const left = px / W * r.width; tip.style.left = Math.min(Math.max(left, 60), r.width - 60) + "px"; tip.style.top = (py / H * r.height - 52) + "px";
+    };
+    const hide = () => { $("cx").setAttribute("visibility", "hidden"); tip.hidden = true; };
+    hit.addEventListener("pointermove", show); hit.addEventListener("pointerdown", show); hit.addEventListener("pointerleave", hide);
+  }
+
+  // ---------- back to the tool index ----------
+  const toTop = $("toTop");
+  const onScroll = () => { const r = $("tools").getBoundingClientRect(); toTop.classList.toggle("show", r.bottom < 0); };
+  window.addEventListener("scroll", onScroll, { passive: true }); onScroll();
+
+  // ---------- language change ----------
+  function setFtsoLinks(a) { document.querySelectorAll(".ftsoAddrLink").forEach(el => { el.href = EXPLORER + a; el.textContent = "FtsoV2（" + short(a) + "）"; }); }
+  if (window.FJ_I18N) window.FJ_I18N.onChange(() => {
+    if (netState) setNet(netState[0], netState[1]);
+    Object.entries(linked).forEach(([id, name]) => resolve(name, id).catch(() => {}));
+    if (addrCache.FtsoV2) addrCache.FtsoV2.then(setFtsoLinks).catch(() => {});
+    $("provAsOf").textContent = M("asOf");
+    renderProv();
+    $("entrantCount").textContent = parseEntrants().length;
+    fillConv(); updateConv();
+    loadPrices(); loadBlock(); loadFxrp(); loadNet();
+    renderDraw(); renderProof();
+    $("priceHint").textContent = M("tapHint");
+    $("chartClose").setAttribute("aria-label", M("close"));
+    if (!sheet.hidden) { renderChartFrame(); drawChart(); }
+    if (!$("checkResult").hidden && $("addr").value.trim()) check();
+    if (!$("saResult").hidden && $("xrplAddr").value.trim()) checkSa();
+  });
+
+  // ---------- start ----------
+  $("priceHint").textContent = M("tapHint");
+  $("chartClose").setAttribute("aria-label", M("close"));
+  loadPrices(); loadBlock(); loadFxrp(); loadNet();
+  resolve("RandomNumberV2", "rngAddr").catch(() => {});
+  resolve("WNat", "wnatAddr").catch(() => {});
+  resolve("RewardManager", "rmAddr").catch(() => {});
+  resolve("MasterAccountController", "macAddr").catch(() => {});
+  setInterval(loadPrices, 4000);
+  setInterval(loadBlock, 6000);
+  setInterval(loadFxrp, 30000);
+  setInterval(loadNet, 8000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) { loadPrices(); loadBlock(); loadFxrp(); loadNet(); } });
+})();
+</script>
+</body>
+</html>
