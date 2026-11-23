@@ -842,6 +842,10 @@
   const MSG = {
     ja: {
       locale: "ja-JP",
+      chartPartial: "（一部の時間は公開RPCから読めへんかったから飛ばしとる）",
+      chartLiveOnly: "いまは公開RPCから過去の価格が読めへんかったから、開いてからのライブの値動きを描いとる。少ししてからもう一回開くと、過去の分も出るかもしれん。",
+      chartWaitLive: "ライブの価格を集めとるで。数秒ごとに線が伸びていく…",
+      sinceOpen: "開いてから",
       featTag: "使っている機能", featHow: "を、過去のブロック番号を指定して呼び出し",
       tapHint: "通貨をタップすると、チャートが出るで。",
       close: "閉じる", range24h: "24時間", range3d: "3日間",
@@ -888,6 +892,10 @@
     },
     en: {
       locale: "en-US",
+      chartPartial: "(some hours couldn't be read from the public RPC and were skipped)",
+      chartLiveOnly: "Past prices couldn't be read from the public RPC right now, so this shows live movement since you opened it. Try again a bit later to see history.",
+      chartWaitLive: "Collecting live prices — the line grows every few seconds…",
+      sinceOpen: "since opened",
       featTag: "Flare feature", featHow: "called at past block numbers",
       tapHint: "Tap a coin to see its chart.",
       close: "Close", range24h: "24h", range3d: "3 days",
@@ -934,6 +942,10 @@
     },
     ko: {
       locale: "ko-KR",
+      chartPartial: "(일부 시간은 공개 RPC에서 읽지 못해 건너뛰었습니다)",
+      chartLiveOnly: "지금은 공개 RPC에서 과거 가격을 읽지 못해, 연 뒤의 실시간 움직임을 그리고 있습니다. 조금 뒤 다시 열면 과거 데이터가 나올 수도 있습니다.",
+      chartWaitLive: "실시간 가격을 모으는 중입니다. 몇 초마다 선이 늘어납니다…",
+      sinceOpen: "연 뒤로",
       featTag: "사용하는 기능", featHow: "를 과거 블록 번호를 지정해 호출",
       tapHint: "코인을 누르면 차트가 나옵니다.",
       close: "닫기", range24h: "24시간", range3d: "3일",
@@ -1429,45 +1441,63 @@
   grid.addEventListener("keydown", (e) => { const c = e.target.closest(".price[data-sym]"); if (c && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openChart(c.dataset.sym); } });
 
   window.addEventListener("resize", () => { if (!sheet.hidden && chartPts.length) drawChart(); });
-  async function fetchHistory(range) {
+  // 過去の価格：1回ずつ別々に問い合わせて、時間がかかりすぎたら諦める（公開RPCが詰まっても止まらへんように）
+  const histProvider = new ethers.JsonRpcProvider(RPC, 14, { staticNetwork: true, batchMaxCount: 1 });
+  const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))]);
+  async function fetchHistory(range, onProgress) {
     const { hours, step } = RANGES[range];
-    if (!ftso) await loadPrices();
-    const latest = await provider.getBlock("latest");
-    const back = await provider.getBlock(latest.number - 20000);
-    const bt = (latest.timestamp - back.timestamp) / 20000;   // 平均ブロック時間
+    const ftsoAddr = await resolve("FtsoV2");
+    const hist = new ethers.Contract(ftsoAddr, ["function getFeedsById(bytes21[]) payable returns (uint256[] values, int8[] decimals, uint64 timestamp)"], histProvider);
+    const latest = await withTimeout(histProvider.getBlock("latest"), 10000);
+    let bt = 1.25;
+    try { const back = await withTimeout(histProvider.getBlock(latest.number - 5000), 8000); bt = (latest.timestamp - back.timestamp) / 5000 || bt; } catch (e) {}
     const tags = [];
     for (let h = hours; h >= step; h -= step) tags.push(Math.max(1, latest.number - Math.round(h * 3600 / bt)));
-    const out = [];
-    for (let i = 0; i < tags.length; i += 6) {   // 6件ずつ（公開RPCに優しく）
-      const part = await Promise.all(tags.slice(i, i + 6).map(async (tag) => {
-        try {
-          const [values, decimals, ts] = await ftso.getFeedsById.staticCall(FEED_IDS, { blockTag: tag });
-          const prices = {};
-          FEEDS.forEach(([s], k) => { prices[s] = Number(ethers.formatUnits(values[k], Number(decimals[k]))); });
-          return { t: Number(ts) * 1000, prices };
-        } catch (e) { return null; }
-      }));
-      out.push(...part.filter(Boolean));
-    }
-    if (!out.length) throw new Error("no history");
-    return out;
+    const out = []; let done = 0;
+    const queue = tags.slice();
+    const one = async (tag) => {
+      try {
+        const [values, decimals, ts] = await withTimeout(hist.getFeedsById.staticCall(FEED_IDS, { blockTag: tag }), 7000);
+        const prices = {};
+        FEEDS.forEach(([s], k) => { prices[s] = Number(ethers.formatUnits(values[k], Number(decimals[k]))); });
+        out.push({ t: Number(ts) * 1000, prices });
+      } catch (e) { /* 読めへん時間は飛ばす */ }
+      done++; if (onProgress) onProgress(done, tags.length);
+      if (done >= 4 && out.length === 0) queue.length = 0;   // 最初の4件が全滅なら、待たずにあきらめる
+    };
+    await Promise.all(Array.from({ length: 4 }, async () => { while (queue.length) await one(queue.shift()); }));
+    out.sort((x, y) => x.t - y.t);
+    return { pts: out, total: tags.length };
   }
+  let chartLiveOnly = false;
   async function loadChart() {
     const sym = chartSym, range = chartRange;
-    $("chartBody").innerHTML = `<div class="chart-msg">${M("chartLoading")}</div>`;
+    chartLiveOnly = false;
+    $("chartBody").innerHTML = `<div class="chart-msg" id="chartMsg">${M("chartLoading")}</div>`;
+    const prog = (d, n) => { const m = $("chartMsg"); if (m && sym === chartSym && range === chartRange) m.textContent = `${M("chartLoading")} ${d}/${n}`; };
+    let res = null;
     try {
-      if (!histCache[range]) histCache[range] = fetchHistory(range).catch(e => { delete histCache[range]; throw e; });
-      const hist = await histCache[range];
-      if (sym !== chartSym || range !== chartRange) return;
-      chartPts = hist.map(p => ({ t: p.t, v: p.prices[sym] })).filter(p => p.v > 0);
+      if (!histCache[range]) histCache[range] = fetchHistory(range, prog).then(r => { if (r.pts.length < 3) delete histCache[range]; return r; }).catch(e => { delete histCache[range]; throw e; });
+      res = await histCache[range];
+    } catch (e) { console.error(e); }
+    if (sym !== chartSym || range !== chartRange) return;
+    const pts = res ? res.pts.map(p => ({ t: p.t, v: p.prices[sym] })).filter(p => p.v > 0) : [];
+    if (pts.length >= 3) {
+      chartPts = pts;
+      $("chartNote").textContent = M("chartNote", RANGES[range].step) + (res.pts.length < res.total ? " " + M("chartPartial") : "");
       drawChart();
-    } catch (e) {
-      console.error(e);
-      if (sym === chartSym) $("chartBody").innerHTML = `<div class="chart-msg">${M(range === "d1" ? "chartFail" : "chartFailLong")}</div>`;
+    } else {
+      // 過去の値が読めへんかったら、開いてからのライブの値動きだけで描く
+      chartLiveOnly = true;
+      chartPts = last[sym] ? [{ t: Date.now(), v: last[sym] }] : [];
+      liveTail = [];
+      $("chartNote").textContent = M("chartLiveOnly");
+      $("chartBody").innerHTML = `<div class="chart-msg">${M("chartWaitLive")}</div>`;
     }
   }
   function chartAppendLive(sym, v) {
-    if (sheet.hidden || sym !== chartSym || !chartPts.length) return;
+    if (sheet.hidden || sym !== chartSym) return;
+    if (!chartPts.length) { if (!chartLiveOnly) return; chartPts = [{ t: Date.now(), v }]; return; }
     liveTail.push({ t: Date.now(), v });
     if (liveTail.length > 600) liveTail.shift();
     drawChart();
@@ -1476,7 +1506,7 @@
     const name = (FEEDS.find(f => f[0] === chartSym) || [chartSym, ""])[1];
     $("chartTitle").innerHTML = `${chartSym}/USD <span>${name}</span>`;
     document.querySelectorAll("#chartRange [data-r]").forEach(b => { b.textContent = M(b.dataset.r === "d1" ? "range24h" : "range3d"); b.setAttribute("aria-pressed", String(b.dataset.r === chartRange)); });
-    $("chartNote").textContent = M("chartNote", RANGES[chartRange].step);
+    $("chartNote").textContent = chartLiveOnly ? M("chartLiveOnly") : M("chartNote", RANGES[chartRange].step);
     $("chartFeat").innerHTML = `<span class="tag">${M("featTag")}</span>FTSOv2 — <code>FtsoV2.getFeedsById(bytes21[])</code> ${M("featHow")}`;
     $("chartNow").textContent = last[chartSym] ? fmtPrice(last[chartSym]) : "—";
     $("chartChg").textContent = "";
@@ -1517,7 +1547,7 @@
     const first = pts[0].v, pct = (lastP.v - first) / first * 100;
     $("chartNow").textContent = fmtPrice(lastP.v);
     const ch = $("chartChg");
-    ch.textContent = `${pct >= 0 ? "▲" : "▼"} ${Math.abs(pct).toFixed(2)}% · ${M(chartRange === "d1" ? "range24h" : "range3d")}`;
+    ch.textContent = `${pct >= 0 ? "▲" : "▼"} ${Math.abs(pct).toFixed(2)}% · ${chartLiveOnly ? M("sinceOpen") : M(chartRange === "d1" ? "range24h" : "range3d")}`;
     ch.className = "chart-chg " + (pct >= 0 ? "up" : "down");
     // hover / touch crosshair
     const svg = $("chartBody").querySelector("svg"), hit = $("cxHit"), tip = $("chartTip");
